@@ -1,0 +1,19 @@
+Command line options are used to specify various startup options for %{NAMELOWER}:
+
+*-d*, *--debug*::
+    Debug output.
+
+*-h*, *--help*::
+    Print or show help information and exit.
+
+*-m*, *--man*::
+    Print the entire manual page and exit.
+
+*-q*, *--quiet*::
+    Quiet output.
+
+*-v*, *--verbose*::
+    Verbose output.
+
+*-V*, *--version*::
+    Print or show the program version and release number and exit.
