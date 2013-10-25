@@ -1,0 +1,8 @@
+*%{NAME}* [*-q*|*--quiet*] [*-v*|*--verbose*] [*-d*|*--debug*]
+
+*%{NAME}* {*--version*|*-V*}
+
+*%{NAME}* {*--help*|*-h*}
+
+*%{NAME}* {*--man*|*-m*}
+
