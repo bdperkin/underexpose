@@ -1,5 +1,5 @@
 Name:		underexpose
-Version:	0.0.0
+Version:	0.0.1
 Release:	1%{?dist}
 Summary:	Anonymous, private, and caching web proxy installer.
 
@@ -45,4 +45,7 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Fri Oct 25 2013 Brandon Perkins <bperkins@redhat.com> 0.0.1-1
+- new package built with tito
+
 
