@@ -1,5 +1,5 @@
 Name:		underexpose
-Version:	0.0.1
+Version:	0.0.2
 Release:	1%{?dist}
 Summary:	Anonymous, private, and caching web proxy installer.
 
@@ -77,6 +77,13 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 
 
 %changelog
+* Fri Oct 25 2013 Brandon Perkins <bperkins@redhat.com> 0.0.2-1
+- Use tito CustomBuilder. (bperkins@redhat.com)
+- Add groff2pod for document building. (bperkins@redhat.com)
+- Get documentation framework setup. (bperkins@redhat.com)
+- Perl script placeholder. (bperkins@redhat.com)
+- Sane starting point for spec file. (bperkins@redhat.com)
+
 * Fri Oct 25 2013 Brandon Perkins <bperkins@redhat.com> 0.0.1-1
 - new package built with tito
 
