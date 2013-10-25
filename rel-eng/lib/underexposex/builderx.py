@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-""" Code for building Inspectorates docs and committing them. """
+""" Code for building Underexpose docs and committing them. """
 
 import os
 from tito import builder
