@@ -64,10 +64,10 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %install
 %{__rm} -rf $RPM_BUILD_ROOT
 %{__mkdir_p} %{buildroot}%{_bindir}
-%{__mkdir_p} %{buildroot}%{_configdir}/%{name}
+%{__mkdir_p} %{buildroot}%{_sysconfdir}/%{name}
 %{__mkdir_p} %{buildroot}%{_mandir}/man8
 %{__install} %{name} %{buildroot}%{_bindir}
-%{__install} log4perl.conf %{buildroot}%{_configdir}/%{name}
+%{__install} log4perl.conf %{buildroot}%{_sysconfdir}/%{name}
 %{__gzip} -c manpage/%{name}.8 > %{buildroot}/%{_mandir}/man8/%{name}.8.gz
 
 %files
@@ -76,7 +76,8 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %doc %{DocFiles}
 %doc %{DocFormats} pod
 %doc %{_mandir}/man8/%{name}.8.gz
-%config %{buildroot}%{_configdir}
+%dir %{_sysconfdir}/%{name}
+%config %{_sysconfdir}/%{name}/log4perl.conf
 
 %changelog
 * Fri Oct 25 2013 Brandon Perkins <bperkins@redhat.com> 0.0.2-1
