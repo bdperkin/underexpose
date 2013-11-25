@@ -68,8 +68,10 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %{__rm} -rf $RPM_BUILD_ROOT
 %{__mkdir_p} %{buildroot}%{_bindir}
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/%{name}
+%{__mkdir_p} %{buildroot}%{_var}/log/%{name}
 %{__mkdir_p} %{buildroot}%{_mandir}/man8
 %{__install} %{name} %{buildroot}%{_bindir}
+%{__install} /dev/null %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %{__install} log4perl.conf %{buildroot}%{_sysconfdir}/%{name}
 %{__gzip} -c manpage/%{name}.8 > %{buildroot}/%{_mandir}/man8/%{name}.8.gz
 
@@ -79,7 +81,9 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %doc %{DocFiles}
 %doc %{DocFormats} pod
 %doc %{_mandir}/man8/%{name}.8.gz
+%dir %{_var}/log/%{name}
 %dir %{_sysconfdir}/%{name}
+%config %{_sysconfdir}/%{name}/%{name}.conf
 %config %{_sysconfdir}/%{name}/log4perl.conf
 
 %changelog
