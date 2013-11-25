@@ -65,12 +65,15 @@ my $DBG = 1;    # Set debug output level:
                 #   2 -- verbose
                 #   3 -- debug
 
+my @ARGVOPTS = @ARGV;    # Store original command-line arguments
+my %conf;                # Active configuration
+my %confargs;            # Configuration provided by command-line
+
 ################################################################################
 # Parse command line options.  This function adheres to the POSIX syntax for CLI
 # options, with GNU extensions.
 ################################################################################
 # Initialize GetOptions variables
-my @ARGVOPTS  = @ARGV;
 my $optcnfdir = "/etc/$name";
 my $optdebug;
 my $optdocdir = "/usr/share/doc/$name-$version";
@@ -79,10 +82,14 @@ my $optlogdir = "/var/log/$name";
 my $optman;
 my $optmandir = "/usr/share/man/man8";
 my $optquiet;
+my $optsetup;
+my $optuninst;
 my $optverbose;
 my $optversion;
 
 GetOptions(
+    "c=i"         => \$confargs{circuits},
+    "circuits=i"  => \$confargs{circuits},
     "C=s"         => \$optcnfdir,
     "configdir=s" => \$optcnfdir,
     "d"           => \$optdebug,
@@ -99,6 +106,10 @@ GetOptions(
     "mandir=s"    => \$optmandir,
     "q"           => \$optquiet,
     "quiet"       => \$optquiet,
+    "S"           => \$optsetup,
+    "setup"       => \$optsetup,
+    "U"           => \$optuninst,
+    "uninstall"   => \$optuninst,
     "v"           => \$optverbose,
     "verbose"     => \$optverbose,
     "V"           => \$optversion,
@@ -143,6 +154,9 @@ Log::Log4perl::init($logcnf);
 my $logger = Log::Log4perl->get_logger();
 $logger->debug( "Log4perl logger started using " . $logcnf );
 $logger->debug( "GetOptions: " . join( "|", @ARGVOPTS ) );
+my $installer   = $optlogdir . "/" . $name . "_install";
+my $uninstaller = $optlogdir . "/" . $name . "_uninstall";
+my $conffile    = $optcnfdir . "/$name.conf";
 
 ################################################################################
 # Set output level
@@ -161,3 +175,143 @@ if ($optdebug) {
 }
 $logger->debug("Debug level set to $DBG");
 
+################################################################################
+# Checking for invalid options
+################################################################################
+if ( $optsetup && $optuninst ) {
+    $logger->logcroak("Cannot specify setup and uninstall at the same time!");
+}
+
+################################################################################
+# Running Setup
+################################################################################
+if ($optsetup) {
+    $logger->info("Running $name setup...");
+
+    $logger->info("Using configuration file $conffile");
+
+    &readconf;
+    &loadargs;
+    &writeconf;
+    &checkconf;
+
+    $logger->info("Done.");
+    exit 0;
+}
+
+################################################################################
+# Running Uninstaller
+################################################################################
+if ($optuninst) {
+    $logger->warn("Running $name uninstaller...");
+    $logger->info("Using installation file $installer");
+    unless ( open( INST, "$installer" ) ) {
+        $logger->logcroak("Cannot open $installer file for reading: $?");
+    }
+
+    if ( -f $uninstaller ) {
+        my (
+            $dev,  $ino,   $mode,  $nlink, $uid,     $gid, $rdev,
+            $size, $atime, $mtime, $ctime, $blksize, $blocks
+        ) = stat($uninstaller);
+        unless ( rename( $uninstaller, "$uninstaller.$mtime" ) ) {
+            $logger->logcroak(
+                "Unable to rename $uninstaller as $uninstaller.$mtime");
+        }
+    }
+    unless ( open( UNINST, ">$uninstaller" ) ) {
+        $logger->logcroak("Cannot open $uninstaller file for writing: $?");
+    }
+
+    close(UNINST);
+
+    close(INST);
+    $logger->warn("Done.");
+    exit 0;
+}
+
+################################################################################
+# Running Installer
+################################################################################
+$logger->info("Running $name installer...");
+if ( -f $installer ) {
+    my (
+        $dev,  $ino,   $mode,  $nlink, $uid,     $gid, $rdev,
+        $size, $atime, $mtime, $ctime, $blksize, $blocks
+    ) = stat($installer);
+    unless ( rename( $installer, "$installer.$mtime" ) ) {
+        $logger->logcroak("Unable to rename $installer as $installer.$mtime");
+    }
+}
+unless ( open( INST, ">$installer" ) ) {
+    $logger->logcroak("Cannot open $installer file for writing: $?");
+}
+
+$logger->info("Using configuration file $conffile");
+
+&readconf;
+&loadargs;
+&writeconf;
+&checkconf;
+
+close(INST);
+$logger->info("Done.");
+exit 0;
+
+################################################################################
+# Load all command-line arguments into hash
+################################################################################
+sub loadargs {
+    $logger->debug("Loading all command-line arguments into hash");
+    foreach my $confkey ( keys %confargs ) {
+        if ( $confargs{$confkey} ) {
+            $conf{$confkey} = $confargs{$confkey};
+        }
+    }
+}
+
+################################################################################
+# Read all configuration file variables and values into hash
+################################################################################
+sub readconf {
+    $logger->debug(
+        "Reading all configuration file variables and values into hash");
+    if ( -f $conffile && -r $conffile ) {
+        unless ( open( CONF, $conffile ) ) {
+            $logger->logcroak("Cannot open $conffile for reading: $!");
+        }
+        while (<CONF>) {
+            my ( $confkey, $confvalue ) = split( /=/, $_ );
+            chomp $confvalue;
+            $conf{$confkey} = $confvalue;
+        }
+        close(CONF);
+    }
+}
+
+################################################################################
+# Write all configuration variables and values into configuration file
+################################################################################
+sub writeconf {
+    $logger->debug(
+        "Writing all configuration variables and values into configuration file"
+    );
+    unless ( open( CONF, ">$conffile" ) ) {
+        $logger->logcroak("Cannot open $conffile for writing: $!");
+    }
+    foreach my $confkey ( keys %conf ) {
+        print CONF "$confkey=$conf{$confkey}\n";
+    }
+    close(CONF);
+}
+
+################################################################################
+# Check all configuration variables for validity
+################################################################################
+sub checkconf {
+    $logger->debug(
+        "Checking all configuration variables and values for validity");
+    foreach my $confkey ( keys %conf ) {
+        print "$confkey=$conf{$confkey}\n";
+    }
+}
