@@ -23,6 +23,9 @@ Requires:	perl(Getopt::Long)
 Requires:	perl(Pod::Usage)
 Requires:	perl(strict)
 Requires:	perl(warnings)
+Requires:	privoxy
+Requires:	squid
+Requires:	tor
 
 %define NameUpper %{expand:%%(echo %{name} | tr [:lower:] [:upper:])}
 %define NameMixed %{expand:%%(echo %{name} | %{__sed} -e "s/\\([a-z]\\)\\([a-zA-Z0-9]*\\)/\\u\\1\\2/g")}
