@@ -48,6 +48,10 @@ my $name    = "%{NAME}";          # Name string
 my $version = "%{VERSION}";       # Version number
 my $release = "%{RELEASE}";       # Release string
 
+my $torsocksport = "9050";        # Second-generation onion router port
+my $privoxylistenport = "8118";   # Privacy Enhancing Proxy port
+my $squidhttpport = "3128";       # HTTP web proxy caching server port
+
 ################################################################################
 # Specify module configuration options to be enabled
 ################################################################################
@@ -192,8 +196,8 @@ if ($optsetup) {
 
     &readconf;
     &loadargs;
-    &writeconf;
     &checkconf;
+    &writeconf;
 
     $logger->info("Done.");
     exit 0;
@@ -251,8 +255,8 @@ $logger->info("Using configuration file $conffile");
 
 &readconf;
 &loadargs;
-&writeconf;
 &checkconf;
+&writeconf;
 
 close(INST);
 $logger->info("Done.");
@@ -313,5 +317,66 @@ sub checkconf {
         "Checking all configuration variables and values for validity");
     foreach my $confkey ( keys %conf ) {
         print "$confkey=$conf{$confkey}\n";
+    }
+
+    $logger->debug("Checking circuits...");
+    unless($conf{circuits}) {
+	$logger->logcroak("Number of circuits not specified!");
+    }
+    if($conf{circuits} =~ /^\d+$/) {
+	$logger->info("      circuits: $conf{circuits}");
+    } else {
+	$logger->logcroak("$conf{circuits} is not a positive integer for circuits");
+    }
+
+    my $circuit = 0;
+    while($circuit < $conf{circuits}) {
+	$circuit++;
+	$logger->debug("Checking curcuit $circuit...");
+	$logger->debug("Checking tor circuit $circuit...");
+	unless($conf{'torport' . $circuit}) {
+	    $logger->logcarp("tor port for circuit $circuit not specified");
+	    $conf{'torport' . $circuit} = $torsocksport + ( $circuit * 100 );
+	    $logger->warn("Setting tor port for circuit $circuit to " . $conf{'torport' . $circuit});
+	}
+	if( $conf{'torport' . $circuit} =~ /^\d+$/) {
+	    if( $conf{'torport' . $circuit} > 1023 && $conf{'torport' . $circuit} < 49152 ) {
+		$logger->info( "    tor port $circuit: " . $conf{'torport' . $circuit});
+	    } else {
+		$logger->logcroak($conf{'torport' . $circuit} . " is not in the registered port range for tor port");
+	    }
+	} else {
+	    $logger->logcroak($conf{'torport' . $circuit} . " is not a positive integer for tor port");
+	}
+	$logger->debug("Checking privoxy circuit $circuit...");
+	unless($conf{'privoxyport' . $circuit}) {
+	    $logger->logcarp("privoxy port for circuit $circuit not specified");
+	    $conf{'privoxyport' . $circuit} = $privoxylistenport + ( $circuit * 100 );
+	    $logger->warn("Setting privoxy port for circuit $circuit to " . $conf{'privoxyport' . $circuit});
+	}
+	if( $conf{'privoxyport' . $circuit} =~ /^\d+$/) {
+	    if( $conf{'privoxyport' . $circuit} > 1023 && $conf{'privoxyport' . $circuit} < 49152 ) {
+		$logger->info( "privoxy port $circuit: " . $conf{'privoxyport' . $circuit});
+	    } else {
+		$logger->logcroak($conf{'privoxyport' . $circuit} . " is not in the registered port range for privoxy port");
+	    }
+	} else {
+	    $logger->logcroak($conf{'privoxyport' . $circuit} . " is not a positive integer for privoxy port");
+	}
+    }
+    $logger->debug("Checking squid...");
+    unless($conf{'squidport'}) {
+	$logger->logcarp("squid port not specified");
+	$conf{'squidport'} = $squidhttpport;
+	$logger->warn("Setting squid port to " . $conf{'squidport'});
+    }
+    if( $conf{'squidport'} =~ /^\d+$/) {
+	if( $conf{'squidport'} > 1023 && $conf{'squidport'} < 49152 ) {
+	    $logger->info( "    squid port: " . $conf{'squidport'});
+	} else {
+	    $logger->logcroak($conf{'squidport'} . " is not in the registered port range for squid port");
+	}
+    } else {
+	$logger->logcroak($conf{'squidport'} . " is not a positive integer for squid port");
     }
 }
