@@ -23,6 +23,7 @@ Requires:	perl(Getopt::Long)
 Requires:	perl(Pod::Usage)
 Requires:	perl(strict)
 Requires:	perl(warnings)
+Requires:	policycoreutils-python
 Requires:	privoxy
 Requires:	squid
 Requires:	tor
