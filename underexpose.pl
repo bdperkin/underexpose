@@ -264,15 +264,15 @@ if ($optuninst) {
     while ( defined( my $logline = $bwinst->readline ) ) {
         print "INST: $logline";
         $cmd = $logline;
-        if ( $cmd =~ m/^semanage / ) {
-            if ( $cmd =~ m/^semanage -a / ) {
-                $cmd =~ s/^semanage -a /semanage -d /g;
+        if ( $cmd =~ m/^semanage port / ) {
+            if ( $cmd =~ m/^semanage port -a / ) {
+                $cmd =~ s/^semanage port -a /semanage port -d /g;
             }
-            elsif ( $cmd =~ m/^semanage -d / ) {
-                $cmd =~ s/^semanage -d /semanage -a /g;
+            elsif ( $cmd =~ m/^semanage port -d / ) {
+                $cmd =~ s/^semanage port -d /semanage port -a /g;
             }
             else {
-                $logger->logcroak("Unknown semanage command: $cmd");
+                $logger->logcroak("Unknown semanage port command: $cmd");
             }
         }
         print "UNINST: $cmd";
@@ -355,7 +355,7 @@ close(SEDIFF);
 
 # Get SELinux port status change
 $cmd =
-"comm -13 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.subtracted";
+"comm -23 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.subtracted";
 $logger->debug("Getting SELinux port type subtractions");
 &runcmd;
 
