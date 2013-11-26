@@ -1,0 +1,5 @@
+# default tor options
+TOR_OPTS=""
+
+# default tor conf file
+TOR_CONF="/etc/tor/torrc"
