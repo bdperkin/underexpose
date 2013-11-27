@@ -362,7 +362,7 @@ while ( $circuit < $conf{circuits} ) {
     $cmd = "touch $torc";
     &runcmd;
     print INST "$cmd\n";
-    unless ( open( CFG, ">" ) ) {
+    unless ( open( CFG, ">$torc" ) ) {
         $logger->logcroak("Unable to open $torc for writing: $!");
     }
     print CFG
