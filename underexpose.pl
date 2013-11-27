@@ -305,6 +305,7 @@ if ($optuninst) {
             }
         }
         $cmd =~ s /^systemctl enable /systemctl disable /g;
+        $cmd =~ s /^systemctl start /systemctl stop /g;
         $cmd =~ s /^touch /rm /g;
         &runcmd;
         print UNINST "$cmd";
@@ -429,6 +430,12 @@ while ( $circuit < $conf{circuits} ) {
     $logger->debug(
         "Enabling tor daemon running on port $conf{'torport' . $circuit}...");
     $cmd = "systemctl enable tor@" . $conf{ 'torport' . $circuit } . ".service";
+    &runcmd;
+    print INST "$cmd\n";
+
+    $logger->debug(
+        "Starting tor daemon running on port $conf{'torport' . $circuit}...");
+    $cmd = "systemctl start tor@" . $conf{ 'torport' . $circuit } . ".service";
     &runcmd;
     print INST "$cmd\n";
 
