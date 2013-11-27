@@ -262,7 +262,7 @@ if ($optuninst) {
     }
 
     while ( defined( my $logline = $bwinst->readline ) ) {
-        print "INST: $logline";
+        print ".";
         $cmd = $logline;
         if ( $cmd =~ m/^semanage port / ) {
             if ( $cmd =~ m/^semanage port -a / ) {
@@ -275,9 +275,10 @@ if ($optuninst) {
                 $logger->logcroak("Unknown semanage port command: $cmd");
             }
         }
-        print "UNINST: $cmd";
+        print UNINST "$cmd";
         &runcmd;
     }
+    print "\n";
 
     close(UNINST);
 
@@ -339,9 +340,24 @@ $cmd = "semanage port -E | sort > $tmpdirname/seports.after";
 $logger->debug("Getting SELinux port status after run");
 &runcmd;
 
-# Get SELinux port status change
+# Get SELinux port type subtractions
 $cmd =
-"comm -23 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.added";
+"comm --nocheck-order -23 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.subtracted";
+$logger->debug("Getting SELinux port type subtractions");
+&runcmd;
+
+unless ( open( SEDIFF, "$tmpdirname/seports.subtracted" ) ) {
+    $logger->logcroak("Cannot open $tmpdirname/seports.subtracted for reading");
+}
+while (<SEDIFF>) {
+    $_ =~ s/^port -a /port -d /g;
+    print INST "semanage $_";
+}
+close(SEDIFF);
+
+# Get SELinux port type additions
+$cmd =
+"comm --nocheck-order -13 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.added";
 $logger->debug("Getting SELinux port type additions");
 &runcmd;
 
@@ -349,21 +365,6 @@ unless ( open( SEDIFF, "$tmpdirname/seports.added" ) ) {
     $logger->logcroak("Cannot open $tmpdirname/seports.added for reading");
 }
 while (<SEDIFF>) {
-    print INST "semanage $_";
-}
-close(SEDIFF);
-
-# Get SELinux port status change
-$cmd =
-"comm -13 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.subtracted";
-$logger->debug("Getting SELinux port type subtractions");
-&runcmd;
-
-unless ( open( SEDIFF, "$tmpdirname/seports.added" ) ) {
-    $logger->logcroak("Cannot open $tmpdirname/seports.added for reading");
-}
-while (<SEDIFF>) {
-    $_ =~ s/^port -a /port -d /g;
     print INST "semanage $_";
 }
 close(SEDIFF);
@@ -532,6 +533,7 @@ sub runcmd {
                 $select->remove($fh);
             }
             else {
+                chomp $data;
                 if ( $fh == $rdr ) {
                     $logger->warn($data);
                 }
