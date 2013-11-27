@@ -319,9 +319,17 @@ my $circuit = 0;
 while ( $circuit < $conf{circuits} ) {
     $circuit++;
     $logger->info("Installing curcuit $circuit...");
+
+################################################################################
+# Tor Circuit installation
+################################################################################
     $logger->info(
         "Installing tor circuit $circuit on port $conf{'torport' . $circuit}..."
     );
+
+################################################################################
+# Tor SELinux port type modifications
+################################################################################
     $logger->debug(
 "Setting SELinux type to $torpt on tcp protocol port $conf{'torport' . $circuit}..."
     );
@@ -331,6 +339,27 @@ while ( $circuit < $conf{circuits} ) {
     $logger->info(
 "Installation of tor circuit $circuit on port $conf{'torport' . $circuit} is complete."
     );
+
+################################################################################
+# Privoxy Circuit installation
+################################################################################
+    $logger->info(
+        "Installing privoxy circuit $circuit on port $conf{'privoxyport' . $circuit}..."
+    );
+
+################################################################################
+# Privoxy SELinux port type modifications
+################################################################################
+    $logger->debug(
+"Setting SELinux type to $privoxypt on tcp protocol port $conf{'privoxyport' . $circuit}..."
+    );
+    $cmd =
+"semanage port -a -t $privoxypt -p tcp $conf{'privoxyport' . $circuit} ; if [ \$? -ne 0 ]; then semanage port -m -t $privoxypt -p tcp $conf{'privoxyport' . $circuit}; fi";
+    &runcmd;
+    $logger->info(
+"Installation of privoxy circuit $circuit on port $conf{'privoxyport' . $circuit} is complete."
+    );
+
     $logger->info("Installation of curcuit $circuit is complete.");
 
 }
