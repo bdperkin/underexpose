@@ -35,6 +35,7 @@ use IO::Select;             # OO interface to the select system call
 use IPC::Open3;             # Open a process for reading, writing, and error
                             # handling using open3()
 use Log::Log4perl;          # Log4j implementation for Perl
+use LWP::UserAgent;         # Web user agent class
 use Pod::Usage;             # Pod::Usage, pod2usage() - print a
                             # usage message from embedded pod
                             # documentation
@@ -220,11 +221,25 @@ my $privoxycfg = "/etc/privoxy/config";
 my $squidcfg   = "/etc/squid/squid.conf";
 
 ################################################################################
+# Log directory locations
+################################################################################
+my $torlrfile     = "/etc/logrotate.d/tor";
+my $privoxylrfile = "/etc/logrotate.d/privoxy";
+my $squidlrfile   = "/etc/logrotate.d/squid";
+
+################################################################################
 # Data directory locations
 ################################################################################
 my $tordatadir     = "/var/lib/tor";
 my $privoxydatadir = "";
 my $squiddatadir   = "";
+
+################################################################################
+# Log directory locations
+################################################################################
+my $torlogdir     = "/var/log/tor";
+my $privoxylogdir = "/var/log/privoxy";
+my $squidlogdir   = "/var/log/squid";
 
 ################################################################################
 # Checking for invalid options
@@ -416,6 +431,20 @@ while ( $circuit < $conf{circuits} ) {
     $cmd = "systemctl enable tor@" . $conf{ 'torport' . $circuit } . ".service";
     &runcmd;
     print INST "$cmd\n";
+
+################################################################################
+    # Tor simple tests
+################################################################################
+    $logger->debug(
+        "Testing tor daemon running on port $conf{'torport' . $circuit}...");
+    my $ua = LWP::UserAgent->new;
+    $ua->proxy( [qw/ http https /] => 'socks://localhost:'
+          . $conf{ 'torport' . $circuit } );
+    $ua->cookie_jar( {} );
+    my $rsp = $ua->get('http://check.torproject.org/');
+    print $rsp->content;
+    $rsp = $ua->get('https://check.torproject.org/');
+    print $rsp->content;
 
     $logger->info(
 "Installation of tor circuit $circuit on port $conf{'torport' . $circuit} is complete."
