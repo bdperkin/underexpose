@@ -275,8 +275,9 @@ if ($optuninst) {
                 $logger->logcroak("Unknown semanage port command: $cmd");
             }
         }
-        print UNINST "$cmd";
+        $cmd =~ s /^systemctl enable /systemctl disable /g;
         &runcmd;
+        print UNINST "$cmd";
     }
     print "\n";
 
@@ -336,6 +337,16 @@ while ( $circuit < $conf{circuits} ) {
     $cmd =
 "semanage port -a -t $torpt -p tcp $conf{'torport' . $circuit} ; if [ \$? -ne 0 ]; then semanage port -m -t $torpt -p tcp $conf{'torport' . $circuit}; fi";
     &runcmd;
+
+################################################################################
+    # Tor systemd system and service management
+################################################################################
+    $logger->debug(
+        "Enabling tor daemon running on port $conf{'torport' . $circuit}...");
+    $cmd = "systemctl enable tor@" . $conf{ 'torport' . $circuit } . ".service";
+    &runcmd;
+    print INST "$cmd\n";
+
     $logger->info(
 "Installation of tor circuit $circuit on port $conf{'torport' . $circuit} is complete."
     );
