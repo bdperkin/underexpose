@@ -33,7 +33,7 @@ Requires:	tor
 %define NameLower %{expand:%%(echo %{name} | tr [:upper:] [:lower:])}
 %define Year %{expand:%%(date "+%Y")}
 %define DocFiles ACKNOWLEDGEMENTS AUTHOR AUTHORS AVAILABILITY BUGS CAVEATS COPYING COPYRIGHT DESCRIPTION LICENSE NAME NOTES OPTIONS OUTPUT README.md RESOURCES SYNOPSIS
-%define SubFiles %{name} %{name}.8.asciidoc %{DocFiles} man.asciidoc systemd/privoxy@.service systemd/squid@.service systemd/tor@.service
+%define SubFiles %{name} %{name}.8.asciidoc %{DocFiles} man.asciidoc systemd/privoxy@.service systemd/squid@.service systemd/tor@.service systemd/%{name}.target
 %define DocFormats chunked htmlhelp manpage text xhtml
 
 %description
@@ -78,6 +78,7 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %{__install} --mode=0644 systemd/privoxy@.service %{buildroot}%{_prefix}/lib/systemd/system
 %{__install} --mode=0644 systemd/squid@.service %{buildroot}%{_prefix}/lib/systemd/system
 %{__install} --mode=0644 systemd/tor@.service %{buildroot}%{_prefix}/lib/systemd/system
+%{__install} --mode=0644 systemd/%{name}.target %{buildroot}%{_prefix}/lib/systemd/system
 %{__install} --mode=0644 /dev/null %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %{__install} --mode=0644 log4perl.conf %{buildroot}%{_sysconfdir}/%{name}
 %{__install} --mode=0644 sysconfig/privoxy %{buildroot}%{_sysconfdir}/sysconfig
@@ -90,6 +91,7 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %{_prefix}/lib/systemd/system/privoxy@.service
 %{_prefix}/lib/systemd/system/squid@.service
 %{_prefix}/lib/systemd/system/tor@.service
+%{_prefix}/lib/systemd/system/%{name}.target
 %doc %{DocFiles}
 %doc %{DocFormats} pod
 %doc %{_mandir}/man8/%{name}.8.gz
