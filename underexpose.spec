@@ -69,18 +69,19 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %{__rm} -rf $RPM_BUILD_ROOT
 %{__mkdir_p} %{buildroot}%{_bindir}
 %{__mkdir_p} %{buildroot}%{_prefix}/lib/systemd/system
+%{__mkdir_p} %{buildroot}%{_sysconfdir}/systemd/system/%{name}.target.wants
 %{__mkdir_p} %{buildroot}%{_mandir}/man8
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/%{name}
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/sysconfig
 %{__mkdir_p} %{buildroot}%{_var}/log/%{name}
 %{__install} %{name} %{buildroot}%{_bindir}
-%{__install} systemd/privoxy@.service %{buildroot}%{_prefix}/lib/systemd/system
-%{__install} systemd/squid@.service %{buildroot}%{_prefix}/lib/systemd/system
-%{__install} systemd/tor@.service %{buildroot}%{_prefix}/lib/systemd/system
-%{__install} /dev/null %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
-%{__install} log4perl.conf %{buildroot}%{_sysconfdir}/%{name}
-%{__install} sysconfig/privoxy %{buildroot}%{_sysconfdir}/sysconfig
-%{__install} sysconfig/tor %{buildroot}%{_sysconfdir}/sysconfig
+%{__install} --mode=0644 systemd/privoxy@.service %{buildroot}%{_prefix}/lib/systemd/system
+%{__install} --mode=0644 systemd/squid@.service %{buildroot}%{_prefix}/lib/systemd/system
+%{__install} --mode=0644 systemd/tor@.service %{buildroot}%{_prefix}/lib/systemd/system
+%{__install} --mode=0644 /dev/null %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
+%{__install} --mode=0644 log4perl.conf %{buildroot}%{_sysconfdir}/%{name}
+%{__install} --mode=0644 sysconfig/privoxy %{buildroot}%{_sysconfdir}/sysconfig
+%{__install} --mode=0644 sysconfig/tor %{buildroot}%{_sysconfdir}/sysconfig
 %{__gzip} -c manpage/%{name}.8 > %{buildroot}/%{_mandir}/man8/%{name}.8.gz
 
 %files
@@ -94,6 +95,7 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %doc %{_mandir}/man8/%{name}.8.gz
 %dir %{_var}/log/%{name}
 %dir %{_sysconfdir}/%{name}
+%dir %{_sysconfdir}/systemd/system/%{name}.target.wants
 %config %{_sysconfdir}/%{name}/%{name}.conf
 %config %{_sysconfdir}/%{name}/log4perl.conf
 %config %{_sysconfdir}/sysconfig/privoxy

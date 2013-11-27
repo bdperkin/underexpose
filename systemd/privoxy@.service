@@ -1,12 +1,13 @@
 [Unit]
-Description=Privoxy Web Proxy With Advanced Filtering Capabilities
-After=syslog.target network.target nss-lookup.target
+Description=Privoxy Web Proxy With Advanced Filtering Capabilities on port %i
+BindTo=%{NAME}.target
+After=syslog.target network.target nss-lookup.target %{NAME}.target
 
 [Service]
 Type=forking
-PIDFile=/run/privoxy.pid
-ExecStart=/usr/sbin/privoxy --pidfile /run/privoxy.pid --user privoxy /etc/privoxy/config
-ExecStartPre=
+PIDFile=/run/privoxy_%i.pid
+ExecStart=/usr/sbin/privoxy --pidfile /run/privoxy_%i.pid $PRIVOXY_OPTS /etc/privoxy/config_%i
+ExecStartPre=/usr/sbin/privoxy --no-daemon --config-test --pidfile /run/privoxy_%i.pid $PRIVOXY_OPTS /etc/privoxy/config_%i
 ExecReload=/bin/kill -HUP ${MAINPID}
 ExecStop=/bin/kill -INT ${MAINPID}
 TimeoutSec=30
@@ -15,4 +16,4 @@ LimitNOFILE=24576
 EnvironmentFile=/etc/sysconfig/privoxy
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=%{NAME}.target

@@ -1,5 +1,5 @@
 # default tor options
-TOR_OPTS=""
+TOR_OPTS="--user toranon --defaults-torrc /usr/share/tor/defaults-torrc"
 
 # default tor conf file
 TOR_CONF="/etc/tor/torrc"

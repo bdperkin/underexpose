@@ -321,14 +321,14 @@ while ( $circuit < $conf{circuits} ) {
     $logger->info("Installing curcuit $circuit...");
 
 ################################################################################
-# Tor Circuit installation
+    # Tor Circuit installation
 ################################################################################
     $logger->info(
         "Installing tor circuit $circuit on port $conf{'torport' . $circuit}..."
     );
 
 ################################################################################
-# Tor SELinux port type modifications
+    # Tor SELinux port type modifications
 ################################################################################
     $logger->debug(
 "Setting SELinux type to $torpt on tcp protocol port $conf{'torport' . $circuit}..."
@@ -341,14 +341,14 @@ while ( $circuit < $conf{circuits} ) {
     );
 
 ################################################################################
-# Privoxy Circuit installation
+    # Privoxy Circuit installation
 ################################################################################
     $logger->info(
-        "Installing privoxy circuit $circuit on port $conf{'privoxyport' . $circuit}..."
+"Installing privoxy circuit $circuit on port $conf{'privoxyport' . $circuit}..."
     );
 
 ################################################################################
-# Privoxy SELinux port type modifications
+    # Privoxy SELinux port type modifications
 ################################################################################
     $logger->debug(
 "Setting SELinux type to $privoxypt on tcp protocol port $conf{'privoxyport' . $circuit}..."
@@ -367,22 +367,18 @@ while ( $circuit < $conf{circuits} ) {
 ################################################################################
 # Squid installation
 ################################################################################
-    $logger->info(
-        "Installing squid on port $conf{'squidport'}..."
-    );
+$logger->info("Installing squid on port $conf{'squidport'}...");
 
 ################################################################################
 # Squid SELinux port type modifications
 ################################################################################
-    $logger->debug(
+$logger->debug(
 "Setting SELinux type to $squidpt on tcp protocol port $conf{'squidport'}..."
-    );
-    $cmd =
+);
+$cmd =
 "semanage port -a -t $squidpt -p tcp $conf{'squidport'} ; if [ \$? -ne 0 ]; then semanage port -m -t $squidpt -p tcp $conf{'squidport'}; fi";
-    &runcmd;
-    $logger->info(
-"Installation of squid on port $conf{'squidport'} is complete."
-    );
+&runcmd;
+$logger->info("Installation of squid on port $conf{'squidport'} is complete.");
 
 # Get SELinux port status after run
 $cmd = "semanage port -E | sort > $tmpdirname/seports.after";

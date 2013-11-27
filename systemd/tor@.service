@@ -1,12 +1,13 @@
 [Unit]
-Description=Anonymizing overlay network for TCP
-After=syslog.target network.target nss-lookup.target
+Description=Anonymizing overlay network for TCP on port %i
+BindTo=%{NAME}.target
+After=syslog.target network.target nss-lookup.target %{NAME}.target
 
 [Service]
 Type=forking
-PIDFile=/run/tor.pid
-ExecStart=/usr/bin/tor --runasdaemon 1 --defaults-torrc /usr/share/tor/defaults-torrc -f /etc/tor/torrc --quiet
-ExecStartPre=
+PIDFile=/run/tor_%i.pid
+ExecStart=/usr/bin/tor --pidfile /run/tor_%i.pid $TOR_OPTS -f /etc/tor/torrc_%i
+ExecStartPre=/usr/bin/tor --runasdaemon 0 --verify-config --pidfile /run/tor_%i.pid $TOR_OPTS -f /etc/tor/torrc_%i
 ExecReload=/bin/kill -HUP ${MAINPID}
 ExecStop=/bin/kill -INT ${MAINPID}
 TimeoutSec=30
@@ -15,4 +16,4 @@ LimitNOFILE=32768
 EnvironmentFile=/etc/sysconfig/tor
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=%{NAME}.target

@@ -1,5 +1,5 @@
 # default privoxy options
-PRIVOXY_OPTS=""
+PRIVOXY_OPTS="--user privoxy"
 
 # default privoxy conf file
 PRIVOXY_CONF="/etc/privoxy/config"
