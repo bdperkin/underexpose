@@ -319,7 +319,7 @@ $logger->debug("Getting SELinux port status before run");
 my $circuit = 0;
 while ( $circuit < $conf{circuits} ) {
     $circuit++;
-    $logger->info("Installing curcuit $circuit...");
+    $logger->info("Installing circuit $circuit...");
 
 ################################################################################
     # Tor Circuit installation
@@ -385,7 +385,7 @@ while ( $circuit < $conf{circuits} ) {
 "Installation of privoxy circuit $circuit on port $conf{'privoxyport' . $circuit} is complete."
     );
 
-    $logger->info("Installation of curcuit $circuit is complete.");
+    $logger->info("Installation of circuit $circuit is complete.");
 
 }
 
@@ -408,8 +408,8 @@ $cmd =
 # Squid systemd system and service management
 ################################################################################
 $logger->debug(
-    "Enabling squid daemon running on port $conf{'squidport' . $circuit}...");
-$cmd = "systemctl enable squid@" . $conf{ 'squidport' . $circuit } . ".service";
+    "Enabling squid daemon running on port $conf{'squidport'}...");
+$cmd = "systemctl enable squid@" . $conf{ 'squidport'} . ".service";
 &runcmd;
 print INST "$cmd\n";
 
@@ -530,7 +530,7 @@ sub checkconf {
     my $circuit = 0;
     while ( $circuit < $conf{circuits} ) {
         $circuit++;
-        $logger->debug("Checking curcuit $circuit...");
+        $logger->debug("Checking circuit $circuit...");
         $logger->debug("Checking tor circuit $circuit...");
         unless ( $conf{ 'torport' . $circuit } ) {
             $logger->logcarp("tor port for circuit $circuit not specified");
