@@ -358,21 +358,22 @@ while ( $circuit < $conf{circuits} ) {
     $logger->debug(
         "Configuring tor daemon running on port $conf{'torport' . $circuit}..."
     );
-    $cmd = "touch $torcfg_" . $conf{ 'torport' . $circuit };
+    my $torc = $torcfg . "_" . $conf{ 'torport' . $circuit };
+    $cmd = "touch $torc";
     &runcmd;
     print INST "$cmd\n";
     unless ( open( CFG, ">" ) ) {
-        $logger->logcroak( "Unable to open $torcfg_"
-              . $conf{ 'torport' . $circuit }
-              . " for writing: $!" );
+        $logger->logcroak("Unable to open $torc for writing: $!");
     }
     print CFG
 "SocksPort $conf{'torport' . $circuit} # Bind to localhost:$conf{'torport' . $circuit} for local connections.\n";
     my @loglevels = ( "debug", "info", "notice", "warn", "err" );
     foreach my $loglevel (@loglevels) {
-        print CFG "Log $loglevel file /var/log/tor/$loglevel_"
-          . $conf{ 'torport' . $circuit }
-          . ".log\n";
+        my $logf =
+            "/var/log/tor/"
+          . $loglevel . "_"
+          . $conf{ 'torport' . $circuit } . ".log";
+        print CFG "Log $loglevel file $logf\n";
         if ( $loglevel =~ m/^err$/ ) {
             print CFG "Log $loglevel stderr\n";
         }
@@ -389,34 +390,26 @@ while ( $circuit < $conf{circuits} ) {
         unless ( mkdir($tordd) ) {
             $logger->logcroak("Unable to create directory $tordd: $!");
         }
-        $cmd =
-          "chmod \$(stat -c %a $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        $cmd = "chmod \$(stat -c %a $tordatadir) $tordd";
         &runcmd;
-        $cmd =
-          "chcon \$(stat -c %C $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        $cmd = "chcon \$(stat -c %C $tordatadir) $tordd";
         &runcmd;
-        $cmd =
-          "chgrp \$(stat -c %G $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        $cmd = "chgrp \$(stat -c %G $tordatadir) $tordd";
         &runcmd;
-        $cmd =
-          "chown \$(stat -c %U $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        $cmd = "chown \$(stat -c %U $tordatadir) $tordd";
         &runcmd;
     }
     print CFG "DataDirectory $tordd\n";
     print CFG "User toranon\n";
 
     close(CFG);
-    $cmd =
-      "chmod \$(stat -c %a $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    $cmd = "chmod \$(stat -c %a $torcfg) $torc";
     &runcmd;
-    $cmd =
-      "chcon \$(stat -c %C $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    $cmd = "chcon \$(stat -c %C $torcfg) $torc";
     &runcmd;
-    $cmd =
-      "chgrp \$(stat -c %G $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    $cmd = "chgrp \$(stat -c %G $torcfg) $torc";
     &runcmd;
-    $cmd =
-      "chown \$(stat -c %U $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    $cmd = "chown \$(stat -c %U $torcfg) $torc";
     &runcmd;
 
 ################################################################################
