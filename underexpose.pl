@@ -367,6 +367,20 @@ while ( $circuit < $conf{circuits} ) {
     $cmd =
 "semanage port -a -t $privoxypt -p tcp $conf{'privoxyport' . $circuit} ; if [ \$? -ne 0 ]; then semanage port -m -t $privoxypt -p tcp $conf{'privoxyport' . $circuit}; fi";
     &runcmd;
+
+################################################################################
+    # Privoxy systemd system and service management
+################################################################################
+    $logger->debug(
+"Enabling privoxy daemon running on port $conf{'privoxyport' . $circuit}..."
+    );
+    $cmd =
+        "systemctl enable privoxy@"
+      . $conf{ 'privoxyport' . $circuit }
+      . ".service";
+    &runcmd;
+    print INST "$cmd\n";
+
     $logger->info(
 "Installation of privoxy circuit $circuit on port $conf{'privoxyport' . $circuit} is complete."
     );
@@ -389,7 +403,25 @@ $logger->debug(
 $cmd =
 "semanage port -a -t $squidpt -p tcp $conf{'squidport'} ; if [ \$? -ne 0 ]; then semanage port -m -t $squidpt -p tcp $conf{'squidport'}; fi";
 &runcmd;
+
+################################################################################
+# Squid systemd system and service management
+################################################################################
+$logger->debug(
+    "Enabling squid daemon running on port $conf{'squidport' . $circuit}...");
+$cmd = "systemctl enable squid@" . $conf{ 'squidport' . $circuit } . ".service";
+&runcmd;
+print INST "$cmd\n";
+
 $logger->info("Installation of squid on port $conf{'squidport'} is complete.");
+
+################################################################################
+# %{NAMEMIXED} systemd system and service management
+################################################################################
+$logger->debug("Enabling %{NAME} target...");
+$cmd = "systemctl enable %{NAME}.target";
+&runcmd;
+print INST "$cmd\n";
 
 # Get SELinux port status after run
 $cmd = "semanage port -E | sort > $tmpdirname/seports.after";
