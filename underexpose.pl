@@ -374,13 +374,7 @@ while ( $circuit < $conf{circuits} ) {
           . $loglevel . "_"
           . $conf{ 'torport' . $circuit } . ".log";
         print CFG "Log $loglevel file $logf\n";
-        if ( $loglevel =~ m/^err$/ ) {
-            print CFG "Log $loglevel stderr\n";
-        }
-        elsif ( $loglevel =~ m/^warn$/ ) {
-            print CFG "Log $loglevel stdout\n";
-        }
-        elsif ( $loglevel =~ m/^notice$/ ) {
+        if ( $loglevel =~ m/^notice$/ ) {
             print CFG "Log $loglevel syslog\n";
         }
     }
@@ -401,6 +395,7 @@ while ( $circuit < $conf{circuits} ) {
     }
     print CFG "DataDirectory $tordd\n";
     print CFG "User toranon\n";
+    print CFG "PidFile $tordd/tor_" . $conf{ 'torport' . $circuit } . ".pid\n";
 
     close(CFG);
     $cmd = "chmod \$(stat -c %a $torcfg) $torc";
