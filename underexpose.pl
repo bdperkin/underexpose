@@ -341,7 +341,7 @@ $logger->debug("Getting SELinux port status after run");
 
 # Get SELinux port status change
 $cmd =
-"comm -13 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.added";
+"comm -23 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.added";
 $logger->debug("Getting SELinux port type additions");
 &runcmd;
 
@@ -355,7 +355,7 @@ close(SEDIFF);
 
 # Get SELinux port status change
 $cmd =
-"comm -23 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.subtracted";
+"comm -13 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.subtracted";
 $logger->debug("Getting SELinux port type subtractions");
 &runcmd;
 
