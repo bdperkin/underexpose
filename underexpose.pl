@@ -213,6 +213,20 @@ my $privoxypt = "http_cache_port_t";
 my $squidpt   = "squid_port_t";
 
 ################################################################################
+# Configuration file locations
+################################################################################
+my $torcfg     = "/etc/tor/torrc";
+my $privoxycfg = "/etc/privoxy/config";
+my $squidcfg   = "/etc/squid/squid.conf";
+
+################################################################################
+# Data directory locations
+################################################################################
+my $tordatadir     = "/var/lib/tor";
+my $privoxydatadir = "";
+my $squiddatadir   = "";
+
+################################################################################
 # Checking for invalid options
 ################################################################################
 if ( $optsetup && $optuninst ) {
@@ -339,6 +353,73 @@ while ( $circuit < $conf{circuits} ) {
     &runcmd;
 
 ################################################################################
+    # Tor configuration file generation
+################################################################################
+    $logger->debug(
+        "Configuring tor daemon running on port $conf{'torport' . $circuit}..."
+    );
+    $cmd = "touch $torcfg_" . $conf{ 'torport' . $circuit };
+    &runcmd;
+    print INST "$cmd\n";
+    unless ( open( CFG, ">" ) ) {
+        $logger->logcroak( "Unable to open $torcfg_"
+              . $conf{ 'torport' . $circuit }
+              . " for writing: $!" );
+    }
+    print CFG
+"SocksPort $conf{'torport' . $circuit} # Bind to localhost:$conf{'torport' . $circuit} for local connections.\n";
+    my @loglevels = ( "debug", "info", "notice", "warn", "err" );
+    foreach my $loglevel (@loglevels) {
+        print CFG "Log $loglevel file /var/log/tor/$loglevel_"
+          . $conf{ 'torport' . $circuit }
+          . ".log\n";
+        if ( $loglevel =~ m/^err$/ ) {
+            print CFG "Log $loglevel stderr\n";
+        }
+        elsif ( $loglevel =~ m/^warn$/ ) {
+            print CFG "Log $loglevel stdout\n";
+        }
+        elsif ( $loglevel =~ m/^notice$/ ) {
+            print CFG "Log $loglevel syslog\n";
+        }
+    }
+    print CFG "RunAsDaemon 1\n";
+    my $tordd = $tordatadir . "_" . $conf{ 'torport' . $circuit };
+    if ( !-d $tordd ) {
+        unless ( mkdir($tordd) ) {
+            $logger->logcroak("Unable to create directory $tordd: $!");
+        }
+        $cmd =
+          "chmod \$(stat -c %a $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        &runcmd;
+        $cmd =
+          "chcon \$(stat -c %C $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        &runcmd;
+        $cmd =
+          "chgrp \$(stat -c %G $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        &runcmd;
+        $cmd =
+          "chown \$(stat -c %U $tordd) $tordd_" . $conf{ 'torport' . $circuit };
+        &runcmd;
+    }
+    print CFG "DataDirectory $tordd\n";
+    print CFG "User toranon\n";
+
+    close(CFG);
+    $cmd =
+      "chmod \$(stat -c %a $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    &runcmd;
+    $cmd =
+      "chcon \$(stat -c %C $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    &runcmd;
+    $cmd =
+      "chgrp \$(stat -c %G $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    &runcmd;
+    $cmd =
+      "chown \$(stat -c %U $torcfg) $torcfg_" . $conf{ 'torport' . $circuit };
+    &runcmd;
+
+################################################################################
     # Tor systemd system and service management
 ################################################################################
     $logger->debug(
@@ -407,9 +488,8 @@ $cmd =
 ################################################################################
 # Squid systemd system and service management
 ################################################################################
-$logger->debug(
-    "Enabling squid daemon running on port $conf{'squidport'}...");
-$cmd = "systemctl enable squid@" . $conf{ 'squidport'} . ".service";
+$logger->debug("Enabling squid daemon running on port $conf{'squidport'}...");
+$cmd = "systemctl enable squid@" . $conf{'squidport'} . ".service";
 &runcmd;
 print INST "$cmd\n";
 
