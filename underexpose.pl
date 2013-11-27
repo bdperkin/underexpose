@@ -364,6 +364,26 @@ while ( $circuit < $conf{circuits} ) {
 
 }
 
+################################################################################
+# Squid installation
+################################################################################
+    $logger->info(
+        "Installing squid on port $conf{'squidport'}..."
+    );
+
+################################################################################
+# Squid SELinux port type modifications
+################################################################################
+    $logger->debug(
+"Setting SELinux type to $squidpt on tcp protocol port $conf{'squidport'}..."
+    );
+    $cmd =
+"semanage port -a -t $squidpt -p tcp $conf{'squidport'} ; if [ \$? -ne 0 ]; then semanage port -m -t $squidpt -p tcp $conf{'squidport'}; fi";
+    &runcmd;
+    $logger->info(
+"Installation of squid on port $conf{'squidport'} is complete."
+    );
+
 # Get SELinux port status after run
 $cmd = "semanage port -E | sort > $tmpdirname/seports.after";
 $logger->debug("Getting SELinux port status after run");
