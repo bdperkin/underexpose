@@ -290,6 +290,7 @@ if ($optuninst) {
             }
         }
         $cmd =~ s /^systemctl enable /systemctl disable /g;
+        $cmd =~ s /^touch /rm /g;
         &runcmd;
         print UNINST "$cmd";
     }
