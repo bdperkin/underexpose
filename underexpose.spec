@@ -33,7 +33,7 @@ Requires:	tor
 %define NameLower %{expand:%%(echo %{name} | tr [:upper:] [:lower:])}
 %define Year %{expand:%%(date "+%Y")}
 %define DocFiles ACKNOWLEDGEMENTS AUTHOR AUTHORS AVAILABILITY BUGS CAVEATS COPYING COPYRIGHT DESCRIPTION LICENSE NAME NOTES OPTIONS OUTPUT README.md RESOURCES SYNOPSIS
-%define SubFiles %{name} %{name}.8.asciidoc %{DocFiles} man.asciidoc
+%define SubFiles %{name} %{name}.8.asciidoc %{DocFiles} man.asciidoc systemd/privoxy@.service systemd/squid@.service systemd/tor@.service
 %define DocFormats chunked htmlhelp manpage text xhtml
 
 %description
