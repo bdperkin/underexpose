@@ -35,10 +35,11 @@ use IO::Select;             # OO interface to the select system call
 use IPC::Open3;             # Open a process for reading, writing, and error
                             # handling using open3()
 use Log::Log4perl;          # Log4j implementation for Perl
-use LWP::UserAgent;         # Web user agent class
 use Pod::Usage;             # Pod::Usage, pod2usage() - print a
                             # usage message from embedded pod
                             # documentation
+use WWW::Curl::Easy;        # WWW::Curl - Perl extension interface
+                            # for libcurl
 
 ################################################################################
 # Declare constants
@@ -73,15 +74,16 @@ Getopt::Long::Configure(qw(bundling no_getopt_compat));
 ################################################################################
 # Initialize variables
 ################################################################################
-my $DBG = 1;    # Set debug output level:
-                #   0 -- quiet
-                #   1 -- normal
-                #   2 -- verbose
-                #   3 -- debug
+my $DBG           = 1;    # Set debug output level:
+                          #   0 -- quiet
+                          #   1 -- normal
+                          #   2 -- verbose
+                          #   3 -- debug
+my $dbgtablewidth = 47;
 
-my @ARGVOPTS = @ARGV;    # Store original command-line arguments
-my %conf;                # Active configuration
-my %confargs;            # Configuration provided by command-line
+my @ARGVOPTS = @ARGV;     # Store original command-line arguments
+my %conf;                 # Active configuration
+my %confargs;             # Configuration provided by command-line
 
 ################################################################################
 # Parse command line options.  This function adheres to the POSIX syntax for CLI
@@ -440,18 +442,82 @@ while ( $circuit < $conf{circuits} ) {
     print INST "$cmd\n";
 
 ################################################################################
+    # cURL browser setup
+################################################################################
+    my $browser = WWW::Curl::Easy->new;
+    $browser->setopt( CURLOPT_VERBOSE, 1 );
+    my $curlversion = $browser->version(CURLVERSION_NOW);
+    chomp $curlversion;
+    my @curlversions = split( /\s/, $curlversion );
+    my %libversions;
+    foreach my $curlver (@curlversions) {
+        my ( $lib, $ver ) = split( /\//, $curlver );
+        my ( $major, $minor, $patch ) = split( /\./, $ver );
+        $libversions{$lib}              = $ver;
+        $libversions{ $lib . '-major' } = $major;
+        $libversions{ $lib . '-minor' } = $minor;
+        $libversions{ $lib . '-patch' } = $patch;
+        my $title = "curl, libcurl, & 3rd party library versions";
+        $title =~ tr/a-z/A-Z/;
+        my $eqsgns  = ( ( $dbgtablewidth - length($title) - 2 ) / 2 );
+        my $eqcount = 0;
+        my $eqhr    = "";
+
+        while ( $eqcount < $eqsgns ) {
+            $eqhr = $eqhr . "=";
+            $eqcount++;
+        }
+        my $hdr = sprintf( "%s %s %s", $eqhr, $title, $eqhr );
+        printf( "%${dbgtablewidth}.${dbgtablewidth}s\n", $hdr );
+        my $maxmodlength = 0;
+        foreach my $name ( keys %libversions ) {
+            my $modlength = length($name);
+            if ( $modlength > $maxmodlength ) {
+                $maxmodlength = $modlength;
+            }
+        }
+        my $modverlength = ( $dbgtablewidth - $maxmodlength - 8 );
+        foreach my $name ( sort ( keys %libversions ) ) {
+            my $info = $libversions{$name};
+            printf(
+"== %${maxmodlength}.${maxmodlength}s: %-${modverlength}.${modverlength}s ==\n",
+                $name, $info )
+              if defined $info;
+        }
+        $eqcount = 0;
+        while ( $eqcount < $dbgtablewidth ) {
+            printf("=");
+            $eqcount++;
+        }
+        print "\n";
+    }
+
+    $browser->setopt( CURLOPT_HEADER,      0 );
+    $browser->setopt( CURLOPT_NOPROGRESS,  1 );
+    $browser->setopt( CURLOPT_TCP_NODELAY, 1 );
+    $browser->setopt( CURLOPT_USERAGENT,   "$name/$version" );
+    my $retcode;
+
+################################################################################
     # Tor simple tests
 ################################################################################
     $logger->debug(
         "Testing tor daemon running on port $conf{'torport' . $circuit}...");
-    my $ua = LWP::UserAgent->new;
-    $ua->proxy( [qw/ http https /] => 'socks://localhost:'
-          . $conf{ 'torport' . $circuit } );
-    $ua->cookie_jar( {} );
-    my $rsp = $ua->get('http://check.torproject.org/');
-    print $rsp->content;
-    $rsp = $ua->get('https://check.torproject.org/');
-    print $rsp->content;
+
+    my $tortesturi = "https://check.torproject.org/?lang=en_US";
+    $browser->setopt( CURLOPT_URL, $tortesturi );
+    my $orgtorprojectcheckhtml;
+    $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
+    $retcode = $browser->perform;
+    die "\nCannot get $tortesturi -- $retcode "
+      . $browser->strerror($retcode) . " "
+      . $browser->errbuf . "\n"
+      unless ( $retcode == 0 );
+    die "\nDid not receive XML, got -- ",
+      $browser->getinfo(CURLINFO_CONTENT_TYPE)
+      unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
+      'text/html; charset=utf-8';
+    print "done. =\n";
 
     $logger->info(
 "Installation of tor circuit $circuit on port $conf{'torport' . $circuit} is complete."
