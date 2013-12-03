@@ -308,56 +308,6 @@ my $curloptwriteheader             = '';
 my $curloptwriteinfo               = '';
 
 ################################################################################
-# cURL browser setup
-################################################################################
-my $browser = WWW::Curl::Easy->new;
-$browser->setopt( CURLOPT_VERBOSE, $curloptverbose );
-my $curlversion = $browser->version(CURLVERSION_NOW);
-chomp $curlversion;
-my @curlversions = split( /\s/, $curlversion );
-my %libversions;
-foreach my $curlver (@curlversions) {
-    my ( $lib, $ver ) = split( /\//, $curlver );
-    my ( $major, $minor, $patch ) = split( /\./, $ver );
-    $libversions{$lib}              = $ver;
-    $libversions{ $lib . '-major' } = $major;
-    $libversions{ $lib . '-minor' } = $minor;
-    $libversions{ $lib . '-patch' } = $patch;
-    my $title = "curl, libcurl, & 3rd party library versions";
-    $title =~ tr/a-z/A-Z/;
-    my $eqsgns  = ( ( $dbgtablewidth - length($title) - 2 ) / 2 );
-    my $eqcount = 0;
-    my $eqhr    = "";
-
-    while ( $eqcount < $eqsgns ) {
-        $eqhr = $eqhr . "=";
-        $eqcount++;
-    }
-    my $hdr = sprintf( "%s %s %s", $eqhr, $title, $eqhr );
-    printf( "%${dbgtablewidth}.${dbgtablewidth}s\n", $hdr );
-    my $maxmodlength = 0;
-    foreach my $name ( keys %libversions ) {
-        my $modlength = length($name);
-        if ( $modlength > $maxmodlength ) {
-            $maxmodlength = $modlength;
-        }
-    }
-    my $modverlength = ( $dbgtablewidth - $maxmodlength - 8 );
-    foreach my $name ( sort ( keys %libversions ) ) {
-        my $info = $libversions{$name};
-        $logger->debug(
-            sprintf(
-"== %${maxmodlength}.${maxmodlength}s: %-${modverlength}.${modverlength}s ==\n",
-                $name, $info
-            )
-        ) if defined $info;
-    }
-}
-
-$browser->setopt( CURLOPT_USERAGENT, $curloptuseragent );
-my $retcode;
-
-################################################################################
 # Parse command line options.  This function adheres to the POSIX syntax for CLI
 # options, with GNU extensions.
 ################################################################################
@@ -615,6 +565,56 @@ $logger->info("Using configuration file $conffile");
 &loadargs;
 &checkconf;
 &writeconf;
+
+################################################################################
+# cURL browser setup
+################################################################################
+my $browser = WWW::Curl::Easy->new;
+$browser->setopt( CURLOPT_VERBOSE, $curloptverbose );
+my $curlversion = $browser->version(CURLVERSION_NOW);
+chomp $curlversion;
+my @curlversions = split( /\s/, $curlversion );
+my %libversions;
+foreach my $curlver (@curlversions) {
+    my ( $lib, $ver ) = split( /\//, $curlver );
+    my ( $major, $minor, $patch ) = split( /\./, $ver );
+    $libversions{$lib}              = $ver;
+    $libversions{ $lib . '-major' } = $major;
+    $libversions{ $lib . '-minor' } = $minor;
+    $libversions{ $lib . '-patch' } = $patch;
+    my $title = "curl, libcurl, & 3rd party library versions";
+    $title =~ tr/a-z/A-Z/;
+    my $eqsgns  = ( ( $dbgtablewidth - length($title) - 2 ) / 2 );
+    my $eqcount = 0;
+    my $eqhr    = "";
+
+    while ( $eqcount < $eqsgns ) {
+        $eqhr = $eqhr . "=";
+        $eqcount++;
+    }
+    my $hdr = sprintf( "%s %s %s", $eqhr, $title, $eqhr );
+    printf( "%${dbgtablewidth}.${dbgtablewidth}s\n", $hdr );
+    my $maxmodlength = 0;
+    foreach my $name ( keys %libversions ) {
+        my $modlength = length($name);
+        if ( $modlength > $maxmodlength ) {
+            $maxmodlength = $modlength;
+        }
+    }
+    my $modverlength = ( $dbgtablewidth - $maxmodlength - 8 );
+    foreach my $name ( sort ( keys %libversions ) ) {
+        my $info = $libversions{$name};
+        $logger->debug(
+            sprintf(
+"== %${maxmodlength}.${maxmodlength}s: %-${modverlength}.${modverlength}s ==\n",
+                $name, $info
+            )
+        ) if defined $info;
+    }
+}
+
+$browser->setopt( CURLOPT_USERAGENT, $curloptuseragent );
+my $retcode;
 
 # Get SELinux port status before run
 $cmd = "semanage port -E | sort > $tmpdirname/seports.before";
