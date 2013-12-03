@@ -731,7 +731,7 @@ while ( $circuit < $conf{circuits} ) {
           . "\n" )
       unless ( $retcode == 0 );
     $logger->logcroak(
-        "\nDid not receive XML, got -- ",
+        "\nDid not receive HTML, got -- ",
         $browser->getinfo(CURLINFO_CONTENT_TYPE)
       )
       unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
@@ -899,7 +899,7 @@ while ( $circuit < $conf{circuits} ) {
 
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'privoxyport' . $circuit } );
     $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
-    my $privoxytesturi = "https://check.privoxyproject.org/?lang=en_US";
+    my $privoxytesturi = "http://config.privoxy.org/";
     $browser->setopt( CURLOPT_URL, $privoxytesturi );
     my $orgprivoxyprojectcheckhtml;
     $browser->setopt( CURLOPT_WRITEDATA, \$orgprivoxyprojectcheckhtml );
@@ -910,7 +910,7 @@ while ( $circuit < $conf{circuits} ) {
           . "\n" )
       unless ( $retcode == 0 );
     $logger->logcroak(
-        "\nDid not receive XML, got -- ",
+        "\nDid not receive HTML, got -- ",
         $browser->getinfo(CURLINFO_CONTENT_TYPE)
       )
       unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
@@ -918,20 +918,74 @@ while ( $circuit < $conf{circuits} ) {
 
     $logger->trace($orgprivoxyprojectcheckhtml);
 
-    if (   $orgprivoxyprojectcheckhtml =~ m/privoxy-o/
-        && $orgprivoxyprojectcheckhtml =~ m/\.png/
-        && $orgprivoxyprojectcheckhtml =~ m/Your IP address appears to be: / )
-    {
-        if ( $orgprivoxyprojectcheckhtml =~ m/privoxy-on\.png/ ) {
+    if ( $orgprivoxyprojectcheckhtml =~ m/Privoxy/ ) {
+        if ( $orgprivoxyprojectcheckhtml =~ m/127\.0\.0\.1/ ) {
             $logger->debug("Privoxy state appears to be up.");
             if ( $orgprivoxyprojectcheckhtml =~
-                m/Congratulations\. This browser is configured to use Privoxy\./
-              )
+                m/port $conf{ 'privoxyport' . $circuit }, enabled/ )
             {
                 $logger->info("Privoxy state is up.");
+
+                $browser->setopt( CURLOPT_URL,       $tortesturi );
+                $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
+                $retcode = $browser->perform;
+                $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
+                      . $browser->strerror($retcode) . " "
+                      . $browser->errbuf
+                      . "\n" )
+                  unless ( $retcode == 0 );
+                $logger->logcroak(
+                    "\nDid not receive HTML, got -- ",
+                    $browser->getinfo(CURLINFO_CONTENT_TYPE)
+                  )
+                  unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
+                  'text/html; charset=utf-8';
+
+                $logger->trace($orgtorprojectcheckhtml);
+
+                if (   $orgtorprojectcheckhtml =~ m/tor-o/
+                    && $orgtorprojectcheckhtml =~ m/\.png/
+                    && $orgtorprojectcheckhtml =~
+                    m/Your IP address appears to be: / )
+                {
+                    if ( $orgtorprojectcheckhtml =~ m/tor-on\.png/ ) {
+                        $logger->debug(
+                            "Tor via Privoxy state appears to be up.");
+                        if ( $orgtorprojectcheckhtml =~
+m/Congratulations\. This browser is configured to use Tor\./
+                          )
+                        {
+                            $logger->info("Tor via Privoxy state is up.");
+                        }
+                        elsif ( $orgtorprojectcheckhtml =~
+                            m/Sorry\. You are not using Tor\./ )
+                        {
+                            $logger->logcroak("Tor via Privoxy state is down.");
+                        }
+                        else {
+                            $logger->logcroak(
+"Cannot determine Tor via Privoxy state: $orgtorprojectcheckhtml"
+                            );
+                        }
+                    }
+                    elsif ( $orgtorprojectcheckhtml =~ m/tor-off\.png/ ) {
+                        $logger->logcroak("Tor via Privoxy state is down.");
+                    }
+                    else {
+                        $logger->logcroak(
+"Cannot determine Tor via Privoxy state: $orgtorprojectcheckhtml"
+                        );
+                    }
+                }
+                else {
+                    $logger->logcroak(
+"Cannot determine Tor via Privoxy state: $orgtorprojectcheckhtml"
+                    );
+                }
+
             }
-            elsif ( $orgprivoxyprojectcheckhtml =~
-                m/Sorry\. You are not using Privoxy\./ )
+            elsif (
+                $orgprivoxyprojectcheckhtml =~ m/Privoxy is not being used/ )
             {
                 $logger->logcroak("Privoxy state is down.");
             }
@@ -940,9 +994,6 @@ while ( $circuit < $conf{circuits} ) {
 "Cannot determine Privoxy state: $orgprivoxyprojectcheckhtml"
                 );
             }
-        }
-        elsif ( $orgprivoxyprojectcheckhtml =~ m/privoxy-off\.png/ ) {
-            $logger->logcroak("Privoxy state is down.");
         }
         else {
             $logger->logcroak(
