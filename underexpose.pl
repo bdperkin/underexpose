@@ -443,7 +443,7 @@ my $privoxycfg = "/etc/privoxy/config";
 my $squidcfg   = "/etc/squid/squid.conf";
 
 ################################################################################
-# Log directory locations
+# Log rotate file locations
 ################################################################################
 my $torlrfile     = "/etc/logrotate.d/tor";
 my $privoxylrfile = "/etc/logrotate.d/privoxy";
@@ -807,39 +807,55 @@ while ( $circuit < $conf{circuits} ) {
     unless ( open( CFG, ">$privoxyc" ) ) {
         $logger->logcroak("Unable to open $privoxyc for writing: $!");
     }
+
+    print CFG "confdir /etc/privoxy\n";
+    print CFG "logdir $privoxylogdir\n";
     print CFG
-"SocksPort $conf{'privoxyport' . $circuit} # Bind to localhost:$conf{'privoxyport' . $circuit} for local connections.\n";
-    my @loglevels = ( "debug", "info", "notice", "warn", "err" );
-    foreach my $loglevel (@loglevels) {
-        my $logf =
-            "/var/log/privoxy/"
-          . $loglevel . "_"
-          . $conf{ 'privoxyport' . $circuit } . ".log";
-        print CFG "Log $loglevel file $logf\n";
-        if ( $loglevel =~ m/^notice$/ ) {
-            print CFG "Log $loglevel syslog\n";
+"actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on.\n";
+    print CFG "actionsfile default.action   # Main actions file\n";
+    print CFG "actionsfile user.action      # User customizations\n";
+    print CFG "filterfile default.filter\n";
+    print CFG "filterfile user.filter      # User customizations\n";
+    print CFG "logfile logfile_" . $conf{ 'privoxyport' . $circuit } . ".log\n";
+    print CFG
+"debug     1 # Log the destination for each request Privoxy let through. See also debug 1024.\n";
+    print CFG
+"debug  1024 # Actions that are applied to all sites and maybe overruled later on.\n";
+    print CFG "debug  4096 # Startup banner and warnings\n";
+    print CFG "debug  8192 # Non-fatal errors\n";
+    print CFG "listen-address  127.0.0.1:$conf{'privoxyport' . $circuit}\n";
+    print CFG "toggle  1\n";
+    print CFG "enable-remote-toggle  0\n";
+    print CFG "enable-remote-http-toggle  0\n";
+    print CFG "enable-edit-actions 0\n";
+    print CFG "enforce-blocks 0\n";
+    print CFG "buffer-limit 4096\n";
+    print CFG "enable-proxy-authentication-forwarding 0\n";
+
+    my @pps = ( "/", ":443" );
+    foreach $pp (@pps) {
+        print CFG
+          "forward-socks5t  $pp  127.0.0.1:$conf{'torport' . $circuit}  .\n";
+        print CFG "forward  192.168.*.*$pp  .      # Private-Use  [RFC1918]\n";
+        my $privsub = 16;
+        while ( $privsub < 32 ) {
+            print CFG
+              "forward  172.$privsub.*.*$pp  .      # Private-Use  [RFC1918]\n";
+            $privsub++;
         }
+        print CFG "forward     10.*.*.*$pp  .      # Private-Use  [RFC1918]\n";
+        print CFG
+"forward    127.*.*.*$pp  .      # Loopback     [RFC1122], section 3.2.1.3\n";
+        print CFG "forward    localhost$pp  .\n";
     }
-    print CFG "RunAsDaemon 1\n";
-    my $privoxydd = $privoxydatadir . "_" . $conf{ 'privoxyport' . $circuit };
-    if ( !-d $privoxydd ) {
-        unless ( mkdir($privoxydd) ) {
-            $logger->logcroak("Unable to create direcprivoxyy $privoxydd: $!");
-        }
-        $cmd = "chmod \$(stat -c %a $privoxydatadir) $privoxydd";
-        &runcmd;
-        $cmd = "chcon \$(stat -c %C $privoxydatadir) $privoxydd";
-        &runcmd;
-        $cmd = "chgrp \$(stat -c %G $privoxydatadir) $privoxydd";
-        &runcmd;
-        $cmd = "chown \$(stat -c %U $privoxydatadir) $privoxydd";
-        &runcmd;
-    }
-    print CFG "DataDirecprivoxyy $privoxydd\n";
-    print CFG "User privoxyanon\n";
-    print CFG "PidFile $privoxydd/privoxy_"
-      . $conf{ 'privoxyport' . $circuit }
-      . ".pid\n";
+
+    print CFG "forwarded-connect-retries  1\n";
+    print CFG "accept-intercepted-requests 0\n";
+    print CFG "allow-cgi-request-crunching 0\n";
+    print CFG "split-large-forms 0\n";
+    print CFG "keep-alive-timeout 5\n";
+    print CFG "tolerate-pipelining 1\n";
+    print CFG "socket-timeout 300\n";
 
     close(CFG);
     $cmd = "chmod \$(stat -c %a $privoxycfg) $privoxyc";
@@ -882,7 +898,7 @@ while ( $circuit < $conf{circuits} ) {
     );
 
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'privoxyport' . $circuit } );
-    $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5 );
+    $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
     my $privoxytesturi = "https://check.privoxyproject.org/?lang=en_US";
     $browser->setopt( CURLOPT_URL, $privoxytesturi );
     my $orgprivoxyprojectcheckhtml;

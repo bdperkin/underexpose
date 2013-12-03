@@ -72,6 +72,7 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/systemd/system/%{name}.target.wants
 %{__mkdir_p} %{buildroot}%{_mandir}/man8
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/%{name}
+%{__mkdir_p} %{buildroot}%{_sysconfdir}/logrotate.d
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/sysconfig
 %{__mkdir_p} %{buildroot}%{_var}/log/%{name}
 %{__install} %{name} %{buildroot}%{_bindir}
@@ -81,6 +82,7 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %{__install} --mode=0644 systemd/%{name}.target %{buildroot}%{_prefix}/lib/systemd/system
 %{__install} --mode=0644 /dev/null %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %{__install} --mode=0644 log4perl.conf %{buildroot}%{_sysconfdir}/%{name}
+%{__install} --mode=0644 logrotate/%{name} %{buildroot}%{_sysconfdir}/logrotate.d
 %{__install} --mode=0644 sysconfig/privoxy %{buildroot}%{_sysconfdir}/sysconfig
 %{__install} --mode=0644 sysconfig/tor %{buildroot}%{_sysconfdir}/sysconfig
 %{__gzip} -c manpage/%{name}.8 > %{buildroot}/%{_mandir}/man8/%{name}.8.gz
@@ -100,6 +102,7 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %dir %{_sysconfdir}/systemd/system/%{name}.target.wants
 %config %{_sysconfdir}/%{name}/%{name}.conf
 %config %{_sysconfdir}/%{name}/log4perl.conf
+%config %{_sysconfdir}/logrotate.d/%{name}
 %config %{_sysconfdir}/sysconfig/privoxy
 %config %{_sysconfdir}/sysconfig/tor
 
