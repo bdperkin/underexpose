@@ -835,12 +835,12 @@ while ( $circuit < $conf{circuits} ) {
     my @pps = ( "/", ":443" );
     foreach my $pp (@pps) {
         print CFG
-          "forward-socks5t  $pp  127.0.0.1:$conf{'torport' . $circuit}  .\n";
+          "forward-socks5t  $pp     127.0.0.1:$conf{'torport' . $circuit}  .\n";
         print CFG "forward  192.168.*.*$pp  .      # Private-Use  [RFC1918]\n";
         my $privsub = 16;
         while ( $privsub < 32 ) {
             print CFG
-              "forward  172.$privsub.*.*$pp  .      # Private-Use  [RFC1918]\n";
+"forward   172.$privsub.*.*$pp  .      # Private-Use  [RFC1918]\n";
             $privsub++;
         }
         print CFG "forward     10.*.*.*$pp  .      # Private-Use  [RFC1918]\n";
@@ -920,7 +920,8 @@ while ( $circuit < $conf{circuits} ) {
         if ( $orgprivoxyprojectcheckhtml =~ m/127\.0\.0\.1/ ) {
             $logger->debug("Privoxy state appears to be up.");
             if ( $orgprivoxyprojectcheckhtml =~
-                m/port $conf{ 'privoxyport' . $circuit }, enabled/ )
+                m/port ($conf{ 'privoxyport' . $circuit })/
+                && $orgprivoxyprojectcheckhtml =~ m/ enabled/ )
             {
                 $logger->info("Privoxy state is up.");
 
