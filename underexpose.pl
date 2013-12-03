@@ -719,7 +719,7 @@ while ( $circuit < $conf{circuits} ) {
         "Testing tor daemon running on port $conf{'torport' . $circuit}...");
 
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'torport' . $circuit } );
-    $browser->setopt( CURLOPT_PROXYTYPE, 'CURLPROXY_SOCKS5' );
+    $browser->setopt( CURLOPT_PROXYTYPE, 'socks' );
     my $tortesturi = "https://check.torproject.org/?lang=en_US";
     $browser->setopt( CURLOPT_URL, $tortesturi );
     my $orgtorprojectcheckhtml;
@@ -736,6 +736,8 @@ while ( $circuit < $conf{circuits} ) {
       )
       unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
       'text/html; charset=utf-8';
+
+    $logger->trace($orgtorprojectcheckhtml);
 
     if (   $orgtorprojectcheckhtml =~ m/tor-o/
         && $orgtorprojectcheckhtml =~ m/\.png/
