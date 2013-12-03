@@ -941,266 +941,260 @@ while ( $circuit < $conf{circuits} ) {
     $logger->info(
 "Installation of privoxy circuit $circuit on port $conf{'privoxyport' . $circuit} is complete."
     );
+}
 
 ################################################################################
-    # Squid installation
+# Squid installation
 ################################################################################
-    $logger->info("Installing squid on port $conf{'squidport'}...");
+$logger->info("Installing squid on port $conf{'squidport'}...");
 
 ################################################################################
-    # Squid SELinux port type modifications
+# Squid SELinux port type modifications
 ################################################################################
-    $logger->debug(
+$logger->debug(
 "Setting SELinux type to $squidpt on tcp protocol port $conf{'squidport'}..."
-    );
-    $cmd =
+);
+$cmd =
 "semanage port -a -t $squidpt -p tcp $conf{'squidport'} ; if [ \$? -ne 0 ]; then semanage port -m -t $squidpt -p tcp $conf{'squidport'}; fi";
-    &runcmd;
+&runcmd;
 
 ################################################################################
-    # Squid systemd system and service management
+# Squid systemd system and service management
 ################################################################################
-    $logger->debug(
-        "Enabling squid daemon running on port $conf{'squidport'}...");
-    $cmd = "systemctl enable squid@" . $conf{'squidport'} . ".service";
-    &runcmd;
-    print INST "$cmd\n";
+$logger->debug("Enabling squid daemon running on port $conf{'squidport'}...");
+$cmd = "systemctl enable squid@" . $conf{'squidport'} . ".service";
+&runcmd;
+print INST "$cmd\n";
 
-    $logger->info(
-        "Installation of squid on port $conf{'squidport'} is complete.");
+$logger->info("Installation of squid on port $conf{'squidport'} is complete.");
 
 ################################################################################
-    # %{NAMEMIXED} systemd system and service management
+# %{NAMEMIXED} systemd system and service management
 ################################################################################
-    $logger->debug("Enabling %{NAME} target...");
-    $cmd = "systemctl enable %{NAME}.target";
-    &runcmd;
-    print INST "$cmd\n";
+$logger->debug("Enabling %{NAME} target...");
+$cmd = "systemctl enable %{NAME}.target";
+&runcmd;
+print INST "$cmd\n";
 
-    # Get SELinux port status after run
-    $cmd = "semanage port -E | sort > $tmpdirname/seports.after";
-    $logger->debug("Getting SELinux port status after run");
-    &runcmd;
+# Get SELinux port status after run
+$cmd = "semanage port -E | sort > $tmpdirname/seports.after";
+$logger->debug("Getting SELinux port status after run");
+&runcmd;
 
-    # Get SELinux port type subtractions
-    $cmd =
+# Get SELinux port type subtractions
+$cmd =
 "comm --nocheck-order -23 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.subtracted";
-    $logger->debug("Getting SELinux port type subtractions");
-    &runcmd;
+$logger->debug("Getting SELinux port type subtractions");
+&runcmd;
 
-    unless ( open( SEDIFF, "$tmpdirname/seports.subtracted" ) ) {
-        $logger->logcroak(
-            "Cannot open $tmpdirname/seports.subtracted for reading");
-    }
-    while (<SEDIFF>) {
-        $_ =~ s/^port -a /port -d /g;
-        print INST "semanage $_";
-    }
-    close(SEDIFF);
+unless ( open( SEDIFF, "$tmpdirname/seports.subtracted" ) ) {
+    $logger->logcroak("Cannot open $tmpdirname/seports.subtracted for reading");
+}
+while (<SEDIFF>) {
+    $_ =~ s/^port -a /port -d /g;
+    print INST "semanage $_";
+}
+close(SEDIFF);
 
-    # Get SELinux port type additions
-    $cmd =
+# Get SELinux port type additions
+$cmd =
 "comm --nocheck-order -13 $tmpdirname/seports.{before,after} | sort > $tmpdirname/seports.added";
-    $logger->debug("Getting SELinux port type additions");
-    &runcmd;
+$logger->debug("Getting SELinux port type additions");
+&runcmd;
 
-    unless ( open( SEDIFF, "$tmpdirname/seports.added" ) ) {
-        $logger->logcroak("Cannot open $tmpdirname/seports.added for reading");
-    }
-    while (<SEDIFF>) {
-        print INST "semanage $_";
-    }
-    close(SEDIFF);
+unless ( open( SEDIFF, "$tmpdirname/seports.added" ) ) {
+    $logger->logcroak("Cannot open $tmpdirname/seports.added for reading");
+}
+while (<SEDIFF>) {
+    print INST "semanage $_";
+}
+close(SEDIFF);
 
-    close(INST);
-    $logger->info("Done.");
-    exit 0;
+close(INST);
+$logger->info("Done.");
+exit 0;
 
 ################################################################################
-    # Load all command-line arguments into hash
+# Load all command-line arguments into hash
 ################################################################################
-    sub loadargs {
-        $logger->debug("Loading all command-line arguments into hash");
-        foreach my $confkey ( keys %confargs ) {
-            if ( $confargs{$confkey} ) {
-                $conf{$confkey} = $confargs{$confkey};
-            }
+sub loadargs {
+    $logger->debug("Loading all command-line arguments into hash");
+    foreach my $confkey ( keys %confargs ) {
+        if ( $confargs{$confkey} ) {
+            $conf{$confkey} = $confargs{$confkey};
         }
     }
+}
 
 ################################################################################
-    # Read all configuration file variables and values into hash
+# Read all configuration file variables and values into hash
 ################################################################################
-    sub readconf {
-        $logger->debug(
-            "Reading all configuration file variables and values into hash");
-        if ( -f $conffile && -r $conffile ) {
-            unless ( open( CONF, $conffile ) ) {
-                $logger->logcroak("Cannot open $conffile for reading: $!");
-            }
-            while (<CONF>) {
-                my ( $confkey, $confvalue ) = split( /=/, $_ );
-                chomp $confvalue;
-                $conf{$confkey} = $confvalue;
-            }
-            close(CONF);
+sub readconf {
+    $logger->debug(
+        "Reading all configuration file variables and values into hash");
+    if ( -f $conffile && -r $conffile ) {
+        unless ( open( CONF, $conffile ) ) {
+            $logger->logcroak("Cannot open $conffile for reading: $!");
         }
-    }
-
-################################################################################
-    # Write all configuration variables and values into configuration file
-################################################################################
-    sub writeconf {
-        $logger->debug(
-"Writing all configuration variables and values into configuration file"
-        );
-        unless ( open( CONF, ">$conffile" ) ) {
-            $logger->logcroak("Cannot open $conffile for writing: $!");
-        }
-        foreach my $confkey ( keys %conf ) {
-            print CONF "$confkey=$conf{$confkey}\n";
+        while (<CONF>) {
+            my ( $confkey, $confvalue ) = split( /=/, $_ );
+            chomp $confvalue;
+            $conf{$confkey} = $confvalue;
         }
         close(CONF);
     }
+}
 
 ################################################################################
-    # Check all configuration variables for validity
+# Write all configuration variables and values into configuration file
 ################################################################################
-    sub checkconf {
-        $logger->debug(
-            "Checking all configuration variables and values for validity");
+sub writeconf {
+    $logger->debug(
+        "Writing all configuration variables and values into configuration file"
+    );
+    unless ( open( CONF, ">$conffile" ) ) {
+        $logger->logcroak("Cannot open $conffile for writing: $!");
+    }
+    foreach my $confkey ( keys %conf ) {
+        print CONF "$confkey=$conf{$confkey}\n";
+    }
+    close(CONF);
+}
 
-        $logger->debug("Checking circuits...");
-        unless ( $conf{circuits} ) {
-            $logger->logcroak("Number of circuits not specified!");
-        }
-        if ( $conf{circuits} =~ /^\d+$/ ) {
-            $logger->info("      circuits: $conf{circuits}");
-        }
-        else {
-            $logger->logcroak(
-                "$conf{circuits} is not a positive integer for circuits");
-        }
+################################################################################
+# Check all configuration variables for validity
+################################################################################
+sub checkconf {
+    $logger->debug(
+        "Checking all configuration variables and values for validity");
 
-        my $circuit = 0;
-        while ( $circuit < $conf{circuits} ) {
-            $circuit++;
-            $logger->debug("Checking circuit $circuit...");
-            $logger->debug("Checking tor circuit $circuit...");
-            unless ( $conf{ 'torport' . $circuit } ) {
-                $logger->logcarp("tor port for circuit $circuit not specified");
-                $conf{ 'torport' . $circuit } =
-                  $torsocksport + ( $circuit * 100 );
-                $logger->warn( "Setting tor port for circuit $circuit to "
-                      . $conf{ 'torport' . $circuit } );
-            }
-            if ( $conf{ 'torport' . $circuit } =~ /^\d+$/ ) {
-                if (   $conf{ 'torport' . $circuit } > 1023
-                    && $conf{ 'torport' . $circuit } < 49152 )
-                {
-                    $logger->info( "    tor port $circuit: "
-                          . $conf{ 'torport' . $circuit } );
-                }
-                else {
-                    $logger->logcroak( $conf{ 'torport' . $circuit }
-                          . " is not in the registered port range for tor port"
-                    );
-                }
+    $logger->debug("Checking circuits...");
+    unless ( $conf{circuits} ) {
+        $logger->logcroak("Number of circuits not specified!");
+    }
+    if ( $conf{circuits} =~ /^\d+$/ ) {
+        $logger->info("      circuits: $conf{circuits}");
+    }
+    else {
+        $logger->logcroak(
+            "$conf{circuits} is not a positive integer for circuits");
+    }
+
+    my $circuit = 0;
+    while ( $circuit < $conf{circuits} ) {
+        $circuit++;
+        $logger->debug("Checking circuit $circuit...");
+        $logger->debug("Checking tor circuit $circuit...");
+        unless ( $conf{ 'torport' . $circuit } ) {
+            $logger->logcarp("tor port for circuit $circuit not specified");
+            $conf{ 'torport' . $circuit } = $torsocksport + ( $circuit * 100 );
+            $logger->warn( "Setting tor port for circuit $circuit to "
+                  . $conf{ 'torport' . $circuit } );
+        }
+        if ( $conf{ 'torport' . $circuit } =~ /^\d+$/ ) {
+            if (   $conf{ 'torport' . $circuit } > 1023
+                && $conf{ 'torport' . $circuit } < 49152 )
+            {
+                $logger->info(
+                    "    tor port $circuit: " . $conf{ 'torport' . $circuit } );
             }
             else {
                 $logger->logcroak( $conf{ 'torport' . $circuit }
-                      . " is not a positive integer for tor port" );
+                      . " is not in the registered port range for tor port" );
             }
-            $logger->debug("Checking privoxy circuit $circuit...");
-            unless ( $conf{ 'privoxyport' . $circuit } ) {
-                $logger->logcarp(
-                    "privoxy port for circuit $circuit not specified");
-                $conf{ 'privoxyport' . $circuit } =
-                  $privoxylistenport + ( $circuit * 100 );
-                $logger->warn( "Setting privoxy port for circuit $circuit to "
+        }
+        else {
+            $logger->logcroak( $conf{ 'torport' . $circuit }
+                  . " is not a positive integer for tor port" );
+        }
+        $logger->debug("Checking privoxy circuit $circuit...");
+        unless ( $conf{ 'privoxyport' . $circuit } ) {
+            $logger->logcarp("privoxy port for circuit $circuit not specified");
+            $conf{ 'privoxyport' . $circuit } =
+              $privoxylistenport + ( $circuit * 100 );
+            $logger->warn( "Setting privoxy port for circuit $circuit to "
+                  . $conf{ 'privoxyport' . $circuit } );
+        }
+        if ( $conf{ 'privoxyport' . $circuit } =~ /^\d+$/ ) {
+            if (   $conf{ 'privoxyport' . $circuit } > 1023
+                && $conf{ 'privoxyport' . $circuit } < 49152 )
+            {
+                $logger->info( "privoxy port $circuit: "
                       . $conf{ 'privoxyport' . $circuit } );
-            }
-            if ( $conf{ 'privoxyport' . $circuit } =~ /^\d+$/ ) {
-                if (   $conf{ 'privoxyport' . $circuit } > 1023
-                    && $conf{ 'privoxyport' . $circuit } < 49152 )
-                {
-                    $logger->info( "privoxy port $circuit: "
-                          . $conf{ 'privoxyport' . $circuit } );
-                }
-                else {
-                    $logger->logcroak( $conf{ 'privoxyport' . $circuit }
-                          . " is not in the registered port range for privoxy port"
-                    );
-                }
             }
             else {
                 $logger->logcroak( $conf{ 'privoxyport' . $circuit }
-                      . " is not a positive integer for privoxy port" );
+                      . " is not in the registered port range for privoxy port"
+                );
             }
         }
-        $logger->debug("Checking squid...");
-        unless ( $conf{'squidport'} ) {
-            $logger->logcarp("squid port not specified");
-            $conf{'squidport'} = $squidhttpport;
-            $logger->warn( "Setting squid port to " . $conf{'squidport'} );
+        else {
+            $logger->logcroak( $conf{ 'privoxyport' . $circuit }
+                  . " is not a positive integer for privoxy port" );
         }
-        if ( $conf{'squidport'} =~ /^\d+$/ ) {
-            if ( $conf{'squidport'} > 1023 && $conf{'squidport'} < 49152 ) {
-                $logger->info( "    squid port: " . $conf{'squidport'} );
-            }
-            else {
-                $logger->logcroak( $conf{'squidport'}
-                      . " is not in the registered port range for squid port" );
-            }
+    }
+    $logger->debug("Checking squid...");
+    unless ( $conf{'squidport'} ) {
+        $logger->logcarp("squid port not specified");
+        $conf{'squidport'} = $squidhttpport;
+        $logger->warn( "Setting squid port to " . $conf{'squidport'} );
+    }
+    if ( $conf{'squidport'} =~ /^\d+$/ ) {
+        if ( $conf{'squidport'} > 1023 && $conf{'squidport'} < 49152 ) {
+            $logger->info( "    squid port: " . $conf{'squidport'} );
         }
         else {
             $logger->logcroak( $conf{'squidport'}
-                  . " is not a positive integer for squid port" );
+                  . " is not in the registered port range for squid port" );
         }
     }
+    else {
+        $logger->logcroak(
+            $conf{'squidport'} . " is not a positive integer for squid port" );
+    }
+}
 
 ################################################################################
-    # Run system calls/commands
+# Run system calls/commands
 ################################################################################
-    sub runcmd {
-        $logger->debug("Running: $cmd");
-        my $pid = open3( $wtr, $rdr, $err, $cmd );
-        my $select = new IO::Select;
-        $select->add( $rdr, $err );
+sub runcmd {
+    $logger->debug("Running: $cmd");
+    my $pid = open3( $wtr, $rdr, $err, $cmd );
+    my $select = new IO::Select;
+    $select->add( $rdr, $err );
 
-        while ( my @ready = $select->can_read ) {
-            foreach my $fh (@ready) {
-                my $data;
-                my $length = sysread $fh, $data, 4096;
+    while ( my @ready = $select->can_read ) {
+        foreach my $fh (@ready) {
+            my $data;
+            my $length = sysread $fh, $data, 4096;
 
-                if ( !defined $length || $length == 0 ) {
-                    $logger->fatal("Error from child: $!\n")
-                      unless defined $length;
-                    $select->remove($fh);
+            if ( !defined $length || $length == 0 ) {
+                $logger->fatal("Error from child: $!\n")
+                  unless defined $length;
+                $select->remove($fh);
+            }
+            else {
+                chomp $data;
+                if ( $fh == $rdr ) {
+                    $logger->warn($data);
+                }
+                elsif ( $fh == $err ) {
+                    $logger->error($data);
                 }
                 else {
-                    chomp $data;
-                    if ( $fh == $rdr ) {
-                        $logger->warn($data);
-                    }
-                    elsif ( $fh == $err ) {
-                        $logger->error($data);
-                    }
-                    else {
-                        return undef;
-                    }
+                    return undef;
                 }
             }
         }
-
-        waitpid( $pid, 0 );
-        my $child_exit_status = $? >> 8;
-        if ($child_exit_status) {
-            $logger->logcroak(
-                "Command \"$cmd\" exited with code $child_exit_status: $!");
-        }
-        else {
-            $logger->trace(
-                "Command \"$cmd\" exited with code $child_exit_status");
-        }
     }
+
+    waitpid( $pid, 0 );
+    my $child_exit_status = $? >> 8;
+    if ($child_exit_status) {
+        $logger->logcroak(
+            "Command \"$cmd\" exited with code $child_exit_status: $!");
+    }
+    else {
+        $logger->trace("Command \"$cmd\" exited with code $child_exit_status");
+    }
+}
