@@ -221,11 +221,9 @@ my $curloptprequote                = '';
 my $curloptprivate                 = '';
 my $curloptprogressdata            = '';
 my $curloptprotocols               = '';
-my $curloptproxy                   = '';
+my $curloptproxy                   = "127.0.0.1";
 my $curloptproxyauth               = '';
 my $curloptproxypassword           = '';
-my $curloptproxyport               = '';
-my $curloptproxytype               = '';
 my $curloptproxyusername           = '';
 my $curloptproxyuserpwd            = '';
 my $curloptproxytransfermode       = '';
@@ -301,7 +299,7 @@ my $curloptuseragent               = "$name/$version";
 my $curloptusername                = '';
 my $curloptuserpwd                 = '';
 my $curloptusessl                  = '';
-my $curloptverbose                 = 1;
+my $curloptverbose                 = 0;
 my $curloptwildcardmatch           = '';
 my $curloptwritefunction           = '';
 my $curloptwriteheader             = '';
@@ -593,7 +591,7 @@ foreach my $curlver (@curlversions) {
         $eqcount++;
     }
     my $hdr = sprintf( "%s %s %s", $eqhr, $title, $eqhr );
-    printf( "%${dbgtablewidth}.${dbgtablewidth}s\n", $hdr );
+    $logger->debug( sprintf( "%${dbgtablewidth}.${dbgtablewidth}s\n", $hdr ) );
     my $maxmodlength = 0;
     foreach my $name ( keys %libversions ) {
         my $modlength = length($name);
@@ -613,6 +611,7 @@ foreach my $curlver (@curlversions) {
     }
 }
 
+$browser->setopt( CURLOPT_PROXY,     $curloptproxy );
 $browser->setopt( CURLOPT_USERAGENT, $curloptuseragent );
 my $retcode;
 
@@ -716,9 +715,11 @@ while ( $circuit < $conf{circuits} ) {
 ################################################################################
     # Tor simple tests
 ################################################################################
-    $logger->debug(
+    $logger->info(
         "Testing tor daemon running on port $conf{'torport' . $circuit}...");
 
+    $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'torport' . $circuit } );
+    $browser->setopt( CURLOPT_PROXYTYPE, 'CURLPROXY_SOCKS5' );
     my $tortesturi = "https://check.torproject.org/?lang=en_US";
     $browser->setopt( CURLOPT_URL, $tortesturi );
     my $orgtorprojectcheckhtml;
