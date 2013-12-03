@@ -833,7 +833,7 @@ while ( $circuit < $conf{circuits} ) {
     print CFG "enable-proxy-authentication-forwarding 0\n";
 
     my @pps = ( "/", ":443" );
-    foreach $pp (@pps) {
+    foreach my $pp (@pps) {
         print CFG
           "forward-socks5t  $pp  127.0.0.1:$conf{'torport' . $circuit}  .\n";
         print CFG "forward  192.168.*.*$pp  .      # Private-Use  [RFC1918]\n";
