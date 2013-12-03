@@ -308,6 +308,56 @@ my $curloptwriteheader             = '';
 my $curloptwriteinfo               = '';
 
 ################################################################################
+# cURL browser setup
+################################################################################
+my $browser = WWW::Curl::Easy->new;
+$browser->setopt( CURLOPT_VERBOSE, $curloptverbose );
+my $curlversion = $browser->version(CURLVERSION_NOW);
+chomp $curlversion;
+my @curlversions = split( /\s/, $curlversion );
+my %libversions;
+foreach my $curlver (@curlversions) {
+    my ( $lib, $ver ) = split( /\//, $curlver );
+    my ( $major, $minor, $patch ) = split( /\./, $ver );
+    $libversions{$lib}              = $ver;
+    $libversions{ $lib . '-major' } = $major;
+    $libversions{ $lib . '-minor' } = $minor;
+    $libversions{ $lib . '-patch' } = $patch;
+    my $title = "curl, libcurl, & 3rd party library versions";
+    $title =~ tr/a-z/A-Z/;
+    my $eqsgns  = ( ( $dbgtablewidth - length($title) - 2 ) / 2 );
+    my $eqcount = 0;
+    my $eqhr    = "";
+
+    while ( $eqcount < $eqsgns ) {
+        $eqhr = $eqhr . "=";
+        $eqcount++;
+    }
+    my $hdr = sprintf( "%s %s %s", $eqhr, $title, $eqhr );
+    printf( "%${dbgtablewidth}.${dbgtablewidth}s\n", $hdr );
+    my $maxmodlength = 0;
+    foreach my $name ( keys %libversions ) {
+        my $modlength = length($name);
+        if ( $modlength > $maxmodlength ) {
+            $maxmodlength = $modlength;
+        }
+    }
+    my $modverlength = ( $dbgtablewidth - $maxmodlength - 8 );
+    foreach my $name ( sort ( keys %libversions ) ) {
+        my $info = $libversions{$name};
+        $logger->debug(
+            sprintf(
+"== %${maxmodlength}.${maxmodlength}s: %-${modverlength}.${modverlength}s ==\n",
+                $name, $info
+            )
+        ) if defined $info;
+    }
+}
+
+$browser->setopt( CURLOPT_USERAGENT, $curloptuseragent );
+my $retcode;
+
+################################################################################
 # Parse command line options.  This function adheres to the POSIX syntax for CLI
 # options, with GNU extensions.
 ################################################################################
@@ -664,60 +714,6 @@ while ( $circuit < $conf{circuits} ) {
     print INST "$cmd\n";
 
 ################################################################################
-    # cURL browser setup
-################################################################################
-    my $browser = WWW::Curl::Easy->new;
-    $browser->setopt( CURLOPT_VERBOSE, $curloptverbose );
-    my $curlversion = $browser->version(CURLVERSION_NOW);
-    chomp $curlversion;
-    my @curlversions = split( /\s/, $curlversion );
-    my %libversions;
-    foreach my $curlver (@curlversions) {
-        my ( $lib, $ver ) = split( /\//, $curlver );
-        my ( $major, $minor, $patch ) = split( /\./, $ver );
-        $libversions{$lib}              = $ver;
-        $libversions{ $lib . '-major' } = $major;
-        $libversions{ $lib . '-minor' } = $minor;
-        $libversions{ $lib . '-patch' } = $patch;
-        my $title = "curl, libcurl, & 3rd party library versions";
-        $title =~ tr/a-z/A-Z/;
-        my $eqsgns  = ( ( $dbgtablewidth - length($title) - 2 ) / 2 );
-        my $eqcount = 0;
-        my $eqhr    = "";
-
-        while ( $eqcount < $eqsgns ) {
-            $eqhr = $eqhr . "=";
-            $eqcount++;
-        }
-        my $hdr = sprintf( "%s %s %s", $eqhr, $title, $eqhr );
-        printf( "%${dbgtablewidth}.${dbgtablewidth}s\n", $hdr );
-        my $maxmodlength = 0;
-        foreach my $name ( keys %libversions ) {
-            my $modlength = length($name);
-            if ( $modlength > $maxmodlength ) {
-                $maxmodlength = $modlength;
-            }
-        }
-        my $modverlength = ( $dbgtablewidth - $maxmodlength - 8 );
-        foreach my $name ( sort ( keys %libversions ) ) {
-            my $info = $libversions{$name};
-            printf(
-"== %${maxmodlength}.${maxmodlength}s: %-${modverlength}.${modverlength}s ==\n",
-                $name, $info )
-              if defined $info;
-        }
-        $eqcount = 0;
-        while ( $eqcount < $dbgtablewidth ) {
-            printf("=");
-            $eqcount++;
-        }
-        print "\n";
-    }
-
-    $browser->setopt( CURLOPT_USERAGENT, $curloptuseragent );
-    my $retcode;
-
-################################################################################
     # Tor simple tests
 ################################################################################
     $logger->debug(
@@ -728,15 +724,51 @@ while ( $circuit < $conf{circuits} ) {
     my $orgtorprojectcheckhtml;
     $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
     $retcode = $browser->perform;
-    die "\nCannot get $tortesturi -- $retcode "
-      . $browser->strerror($retcode) . " "
-      . $browser->errbuf . "\n"
+    $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
+          . $browser->strerror($retcode) . " "
+          . $browser->errbuf
+          . "\n" )
       unless ( $retcode == 0 );
-    die "\nDid not receive XML, got -- ",
-      $browser->getinfo(CURLINFO_CONTENT_TYPE)
+    $logger->logcroak(
+        "\nDid not receive XML, got -- ",
+        $browser->getinfo(CURLINFO_CONTENT_TYPE)
+      )
       unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
       'text/html; charset=utf-8';
-    print "done. =\n";
+
+    if (   $orgtorprojectcheckhtml =~ m/tor-o/
+        && $orgtorprojectcheckhtml =~ m/\.png/
+        && $orgtorprojectcheckhtml =~ m/Your IP address appears to be: / )
+    {
+        if ( $orgtorprojectcheckhtml =~ m/tor-on\.png/ ) {
+            $logger->debug("Tor state appears to be up.");
+            if ( $orgtorprojectcheckhtml =~
+                m/Congratulations\. This browser is configured to use Tor\./ )
+            {
+                $logger->info("Tor state is up.");
+            }
+            elsif (
+                $orgtorprojectcheckhtml =~ m/Sorry\. You are not using Tor\./ )
+            {
+                $logger->logcroak("Tor state is down.");
+            }
+            else {
+                $logger->logcroak(
+                    "Cannot determine Tor state: $orgtorprojectcheckhtml");
+            }
+        }
+        elsif ( $orgtorprojectcheckhtml =~ m/tor-off\.png/ ) {
+            $logger->logcroak("Tor state is down.");
+        }
+        else {
+            $logger->logcroak(
+                "Cannot determine Tor state: $orgtorprojectcheckhtml");
+        }
+    }
+    else {
+        $logger->logcroak(
+            "Cannot determine Tor state: $orgtorprojectcheckhtml");
+    }
 
     $logger->info(
 "Installation of tor circuit $circuit on port $conf{'torport' . $circuit} is complete."
