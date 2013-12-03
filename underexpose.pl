@@ -912,9 +912,7 @@ while ( $circuit < $conf{circuits} ) {
     $logger->logcroak(
         "\nDid not receive HTML, got -- ",
         $browser->getinfo(CURLINFO_CONTENT_TYPE)
-      )
-      unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
-      'text/html; charset=utf-8';
+    ) unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq 'text/html';
 
     $logger->trace($orgprivoxyprojectcheckhtml);
 
