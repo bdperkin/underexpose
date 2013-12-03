@@ -719,7 +719,7 @@ while ( $circuit < $conf{circuits} ) {
         "Testing tor daemon running on port $conf{'torport' . $circuit}...");
 
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'torport' . $circuit } );
-    $browser->setopt( CURLOPT_PROXYTYPE, 'socks' );
+    $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5 );
     my $tortesturi = "https://check.torproject.org/?lang=en_US";
     $browser->setopt( CURLOPT_URL, $tortesturi );
     my $orgtorprojectcheckhtml;
