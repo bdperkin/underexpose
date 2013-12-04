@@ -6,10 +6,10 @@ After=syslog.target network.target nss-lookup.target %{NAME}.target
 [Service]
 Type=forking
 PIDFile=/run/squid_%i.pid
-ExecStart=/usr/sbin/squid ${SQUID_OPTS} -f ${SQUID_CONF}_%i
+ExecStart=/usr/sbin/squid $SQUID_OPTS -f $SQUID_CONF\_%i
 ExecStartPre=/usr/libexec/squid/cache_swap.sh
-ExecReload=/usr/sbin/squid ${SQUID_OPTS} -k reconfigure -f ${SQUID_CONF}_%i
-ExecStop=/usr/sbin/squid -k shutdown -f ${SQUID_CONF}_%i
+ExecReload=/usr/sbin/squid $SQUID_OPTS -k reconfigure -f $SQUID_CONF\_%i
+ExecStop=/usr/sbin/squid -k shutdown -f $SQUID_CONF\_%i
 TimeoutSec=30
 Restart=on-failure
 LimitNOFILE=16384
