@@ -454,7 +454,7 @@ my $squidlrfile   = "/etc/logrotate.d/squid";
 ################################################################################
 my $tordatadir     = "/var/lib/tor";
 my $privoxydatadir = "";
-my $squiddatadir   = "";
+my $squiddatadir   = "/var/spool/squid";
 
 ################################################################################
 # Log directory locations
@@ -835,7 +835,7 @@ while ( $circuit < $conf{circuits} ) {
     my @pps = ( "/", ":443" );
     foreach my $pp (@pps) {
         print CFG
-          "forward-socks5t  $pp     127.0.0.1:$conf{'torport' . $circuit}  .\n";
+          "forward-socks5t     $pp  127.0.0.1:$conf{'torport' . $circuit}  .\n";
         print CFG "forward  192.168.*.*$pp  .      # Private-Use  [RFC1918]\n";
         my $privsub = 16;
         while ( $privsub < 32 ) {
@@ -1025,12 +1025,182 @@ $cmd =
 &runcmd;
 
 ################################################################################
+# Squid configuration file generation
+################################################################################
+$logger->debug(
+    "Configuring squid daemon running on port $conf{'squidport'}...");
+my $squidc = $squidcfg . "_" . $conf{'squidport'};
+$cmd = "touch $squidc";
+&runcmd;
+print INST "$cmd\n";
+unless ( open( CFG, ">$squidc" ) ) {
+    $logger->logcroak("Unable to open $squidc for writing: $!");
+}
+
+print CFG "acl localnet src 10.0.0.0/8  # RFC1918 possible internal network\n";
+print CFG "acl localnet src 172.16.0.0/12       # RFC1918 possible internal network\n";
+print CFG "acl localnet src 192.168.0.0/16      # RFC1918 possible internal network\n";
+print CFG "acl SSL_ports port 443\n";
+print CFG "acl Safe_ports port 80               # http\n";
+print CFG "acl Safe_ports port 21               # ftp\n";
+print CFG "acl Safe_ports port 443              # https\n";
+print CFG "acl Safe_ports port 70               # gopher\n";
+print CFG "acl Safe_ports port 210              # wais\n";
+print CFG "acl Safe_ports port 1025-65535       # unregistered ports\n";
+print CFG "acl Safe_ports port 280              # http-mgmt\n";
+print CFG "acl Safe_ports port 488              # gss-http\n";
+print CFG "acl Safe_ports port 591              # filemaker\n";
+print CFG "acl Safe_ports port 777              # multiling http\n";
+print CFG "acl CONNECT method CONNECT\n";
+print CFG "http_access allow localhost manager\n";
+print CFG "http_access deny manager\n";
+print CFG "http_access deny !Safe_ports\n";
+print CFG "http_access deny CONNECT !SSL_ports\n";
+print CFG "#http_access deny to_localhost\n";
+print CFG "http_access allow localnet\n";
+print CFG "http_access allow localhost\n";
+print CFG "http_access deny all\n";
+print CFG "http_port $conf{'squidport'}\n";
+print CFG "#cache_dir ufs $squiddatadir 100 16 256\n";
+print CFG "coredump_dir $squiddatadir\n";
+print CFG "refresh_pattern ^ftp:                1440    20%     10080\n";
+print CFG "refresh_pattern ^gopher:     1440    0%      1440\n";
+print CFG "refresh_pattern -i (/cgi-bin/|\?) 0  0%      0\n";
+print CFG "refresh_pattern .            0       20%     4320\n";
+
+close(CFG);
+$cmd = "chmod \$(stat -c %a $squidcfg) $squidc";
+&runcmd;
+$cmd = "chcon \$(stat -c %C $squidcfg) $squidc";
+&runcmd;
+$cmd = "chgrp \$(stat -c %G $squidcfg) $squidc";
+&runcmd;
+$cmd = "chown \$(stat -c %U $squidcfg) $squidc";
+&runcmd;
+
+################################################################################
 # Squid systemd system and service management
 ################################################################################
 $logger->debug("Enabling squid daemon running on port $conf{'squidport'}...");
 $cmd = "systemctl enable squid@" . $conf{'squidport'} . ".service";
 &runcmd;
 print INST "$cmd\n";
+
+$logger->debug("Starting squid daemon running on port $conf{'squidport'}...");
+$cmd = "systemctl start squid@" . $conf{'squidport'} . ".service";
+&runcmd;
+print INST "$cmd\n";
+
+################################################################################
+# Squid simple tests
+################################################################################
+$logger->info("Testing squid daemon running on port $conf{'squidport'}...");
+
+$browser->setopt( CURLOPT_PROXYPORT, $conf{'squidport'} );
+$browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+my $squidtesturi = "http://mycache.example.com:" . $conf{'squidport'} . "/squid-internal-mgr/info
+";
+$browser->setopt( CURLOPT_URL, $squidtesturi );
+my $orgsquidprojectcheckhtml;
+$browser->setopt( CURLOPT_WRITEDATA, \$orgsquidprojectcheckhtml );
+$retcode = $browser->perform;
+$logger->logcroak( "\nCannot get $squidtesturi -- $retcode "
+      . $browser->strerror($retcode) . " "
+      . $browser->errbuf
+      . "\n" )
+  unless ( $retcode == 0 );
+$logger->logcroak(
+    "\nDid not receive HTML, got -- ",
+    $browser->getinfo(CURLINFO_CONTENT_TYPE)
+) unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq 'text/html';
+
+$logger->trace($orgsquidprojectcheckhtml);
+
+if ( $orgsquidprojectcheckhtml =~ m/Squid/ ) {
+    if ( $orgsquidprojectcheckhtml =~ m/127\.0\.0\.1/ ) {
+        $logger->debug("Squid state appears to be up.");
+        if (   $orgsquidprojectcheckhtml =~ m/port ($conf{'squidport'})/
+            && $orgsquidprojectcheckhtml =~ m/ enabled/ )
+        {
+            $logger->info("Squid state is up.");
+
+            $browser->setopt( CURLOPT_URL,       $tortesturi );
+            $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
+            $retcode = $browser->perform;
+            $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
+                  . $browser->strerror($retcode) . " "
+                  . $browser->errbuf
+                  . "\n" )
+              unless ( $retcode == 0 );
+            $logger->logcroak(
+                "\nDid not receive HTML, got -- ",
+                $browser->getinfo(CURLINFO_CONTENT_TYPE)
+              )
+              unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
+              'text/html; charset=utf-8';
+
+            $logger->trace($orgtorprojectcheckhtml);
+
+            if (   $orgtorprojectcheckhtml =~ m/tor-o/
+                && $orgtorprojectcheckhtml =~ m/\.png/
+                && $orgtorprojectcheckhtml =~
+                m/Your IP address appears to be: / )
+            {
+                if ( $orgtorprojectcheckhtml =~ m/tor-on\.png/ ) {
+                    $logger->debug(
+                        "Tor via Privoxy via Squid state appears to be up.");
+                    if ( $orgtorprojectcheckhtml =~
+m/Congratulations\. This browser is configured to use Tor\./
+                      )
+                    {
+                        $logger->info("Tor via Privoxy via Squid state is up.");
+                    }
+                    elsif ( $orgtorprojectcheckhtml =~
+                        m/Sorry\. You are not using Tor\./ )
+                    {
+                        $logger->logcroak(
+                            "Tor via Privoxy via Squid state is down.");
+                    }
+                    else {
+                        $logger->logcroak(
+"Cannot determine Tor via Privoxy via Squid state: $orgtorprojectcheckhtml"
+                        );
+                    }
+                }
+                elsif ( $orgtorprojectcheckhtml =~ m/tor-off\.png/ ) {
+                    $logger->logcroak(
+                        "Tor via Privoxy via Squid state is down.");
+                }
+                else {
+                    $logger->logcroak(
+"Cannot determine Tor via Privoxy via Squid state: $orgtorprojectcheckhtml"
+                    );
+                }
+            }
+            else {
+                $logger->logcroak(
+"Cannot determine Tor via Privoxy via Squid state: $orgtorprojectcheckhtml"
+                );
+            }
+
+        }
+        elsif ( $orgsquidprojectcheckhtml =~ m/Squid is not being used/ ) {
+            $logger->logcroak("Squid state is down.");
+        }
+        else {
+            $logger->logcroak(
+                "Cannot determine Squid state: $orgsquidprojectcheckhtml");
+        }
+    }
+    else {
+        $logger->logcroak(
+            "Cannot determine Squid state: $orgsquidprojectcheckhtml");
+    }
+}
+else {
+    $logger->logcroak(
+        "Cannot determine Squid state: $orgsquidprojectcheckhtml");
+}
 
 $logger->info("Installation of squid on port $conf{'squidport'} is complete.");
 
