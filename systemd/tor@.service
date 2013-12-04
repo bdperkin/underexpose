@@ -6,8 +6,8 @@ After=syslog.target network.target nss-lookup.target %{NAME}.target
 [Service]
 Type=forking
 PIDFile=/var/lib/tor_%i/tor_%i.pid
-ExecStart=/usr/bin/tor --runasdaemon 1 --pidfile /var/lib/tor_%i/tor_%i.pid $TOR_OPTS -f /etc/tor/torrc_%i
-ExecStartPre=/usr/bin/tor --runasdaemon 0 --verify-config --pidfile /var/lib/tor_%i/tor_%i.pid $TOR_OPTS -f /etc/tor/torrc_%i
+ExecStart=/usr/bin/tor --runasdaemon 1 --pidfile /var/lib/tor_%i/tor_%i.pid ${TOR_OPTS} -f /etc/tor/torrc_%i
+ExecStartPre=/usr/bin/tor --runasdaemon 0 --verify-config --pidfile /var/lib/tor_%i/tor_%i.pid ${TOR_OPTS} -f /etc/tor/torrc_%i
 ExecReload=/bin/kill -HUP ${MAINPID}
 ExecStop=/bin/kill -INT ${MAINPID}
 TimeoutSec=30
