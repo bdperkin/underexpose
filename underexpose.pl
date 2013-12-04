@@ -59,6 +59,8 @@ my $torsocksport      = "9050";    # Second-generation onion router port
 my $privoxylistenport = "8118";    # Privacy Enhancing Proxy port
 my $squidhttpport     = "3128";    # HTTP web proxy caching server port
 
+my $tortesturi = "https://check.torproject.org/?lang=en_US";
+
 my ( $wtr, $rdr, $err, $cmd );
 use Symbol 'gensym';
 $err = gensym;
@@ -720,8 +722,7 @@ while ( $circuit < $conf{circuits} ) {
 
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'torport' . $circuit } );
     $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5 );
-    my $tortesturi = "https://check.torproject.org/?lang=en_US";
-    $browser->setopt( CURLOPT_URL, $tortesturi );
+    $browser->setopt( CURLOPT_URL,       $tortesturi );
     my $orgtorprojectcheckhtml;
     $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
     $retcode = $browser->perform;
@@ -1038,8 +1039,10 @@ unless ( open( CFG, ">$squidc" ) ) {
 }
 
 print CFG "acl localnet src 10.0.0.0/8  # RFC1918 possible internal network\n";
-print CFG "acl localnet src 172.16.0.0/12       # RFC1918 possible internal network\n";
-print CFG "acl localnet src 192.168.0.0/16      # RFC1918 possible internal network\n";
+print CFG
+  "acl localnet src 172.16.0.0/12       # RFC1918 possible internal network\n";
+print CFG
+  "acl localnet src 192.168.0.0/16      # RFC1918 possible internal network\n";
 print CFG "acl SSL_ports port 443\n";
 print CFG "acl Safe_ports port 80               # http\n";
 print CFG "acl Safe_ports port 21               # ftp\n";
@@ -1098,7 +1101,10 @@ $logger->info("Testing squid daemon running on port $conf{'squidport'}...");
 
 $browser->setopt( CURLOPT_PROXYPORT, $conf{'squidport'} );
 $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
-my $squidtesturi = "http://mycache.example.com:" . $conf{'squidport'} . "/squid-internal-mgr/info
+my $squidtesturi =
+    "http://mycache.example.com:"
+  . $conf{'squidport'}
+  . "/squid-internal-mgr/info
 ";
 $browser->setopt( CURLOPT_URL, $squidtesturi );
 my $orgsquidprojectcheckhtml;
