@@ -1036,22 +1036,22 @@ unless ( open( CFG, ">$squidc" ) ) {
     $logger->logcroak("Unable to open $squidc for writing: $!");
 }
 
-print CFG "acl localnet src 10.0.0.0/8  # RFC1918 possible internal network\n";
+print CFG "acl localnet src 10.0.0.0/8\t# RFC1918 possible internal network\n";
 print CFG
-  "acl localnet src 172.16.0.0/12       # RFC1918 possible internal network\n";
+  "acl localnet src 172.16.0.0/12\t# RFC1918 possible internal network\n";
 print CFG
-  "acl localnet src 192.168.0.0/16      # RFC1918 possible internal network\n";
+  "acl localnet src 192.168.0.0/16\t# RFC1918 possible internal network\n";
 print CFG "acl SSL_ports port 443\n";
-print CFG "acl Safe_ports port 80               # http\n";
-print CFG "acl Safe_ports port 21               # ftp\n";
-print CFG "acl Safe_ports port 443              # https\n";
-print CFG "acl Safe_ports port 70               # gopher\n";
-print CFG "acl Safe_ports port 210              # wais\n";
-print CFG "acl Safe_ports port 1025-65535       # unregistered ports\n";
-print CFG "acl Safe_ports port 280              # http-mgmt\n";
-print CFG "acl Safe_ports port 488              # gss-http\n";
-print CFG "acl Safe_ports port 591              # filemaker\n";
-print CFG "acl Safe_ports port 777              # multiling http\n";
+print CFG "acl Safe_ports port 80\t\t# http\n";
+print CFG "acl Safe_ports port 21\t\t# ftp\n";
+print CFG "acl Safe_ports port 443\t\t# https\n";
+print CFG "acl Safe_ports port 70\t\t# gopher\n";
+print CFG "acl Safe_ports port 210\t\t# wais\n";
+print CFG "acl Safe_ports port 1025-65535\t# unregistered ports\n";
+print CFG "acl Safe_ports port 280\t\t# http-mgmt\n";
+print CFG "acl Safe_ports port 488\t\t# gss-http\n";
+print CFG "acl Safe_ports port 591\t\t# filemaker\n";
+print CFG "acl Safe_ports port 777\t\t# multiling http\n";
 print CFG "acl CONNECT method CONNECT\n";
 print CFG "http_access allow localhost manager\n";
 print CFG "http_access deny manager\n";
@@ -1064,10 +1064,10 @@ print CFG "http_access deny all\n";
 print CFG "http_port $conf{'squidport'}\n";
 print CFG "#cache_dir ufs $squiddatadir 100 16 256\n";
 print CFG "coredump_dir $squiddatadir\n";
-print CFG "refresh_pattern ^ftp:                1440    20%     10080\n";
-print CFG "refresh_pattern ^gopher:     1440    0%      1440\n";
-print CFG "refresh_pattern -i (/cgi-bin/|\?) 0  0%      0\n";
-print CFG "refresh_pattern .            0       20%     4320\n";
+print CFG "refresh_pattern ^ftp:\t\t1440\t20%\t10080\n";
+print CFG "refresh_pattern ^gopher:\t1440\t0%\t1440\n";
+print CFG "refresh_pattern -i (/cgi-bin/|\?) 0\t0%\t0\n";
+print CFG "refresh_pattern .\t\t0\t20%\t4320\n";
 
 close(CFG);
 $cmd = "chmod \$(stat -c %a $squidcfg) $squidc";
