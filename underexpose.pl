@@ -60,6 +60,10 @@ my $privoxylistenport = "8118";    # Privacy Enhancing Proxy port
 my $squidhttpport     = "3128";    # HTTP web proxy caching server port
 
 my $tortesturi = "https://check.torproject.org/?lang=en_US";
+my $orgtorprojectcheckhtml;
+
+my $privoxytesturi = "http://config.privoxy.org/";
+my $orgprivoxyconfightml;
 
 my ( $wtr, $rdr, $err, $cmd );
 use Symbol 'gensym';
@@ -723,7 +727,6 @@ while ( $circuit < $conf{circuits} ) {
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'torport' . $circuit } );
     $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5 );
     $browser->setopt( CURLOPT_URL,       $tortesturi );
-    my $orgtorprojectcheckhtml;
     $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
     $retcode = $browser->perform;
     $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
@@ -900,10 +903,8 @@ while ( $circuit < $conf{circuits} ) {
 
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'privoxyport' . $circuit } );
     $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
-    my $privoxytesturi = "http://config.privoxy.org/";
-    $browser->setopt( CURLOPT_URL, $privoxytesturi );
-    my $orgprivoxyprojectcheckhtml;
-    $browser->setopt( CURLOPT_WRITEDATA, \$orgprivoxyprojectcheckhtml );
+    $browser->setopt( CURLOPT_URL,       $privoxytesturi );
+    $browser->setopt( CURLOPT_WRITEDATA, \$orgprivoxyconfightml );
     $retcode = $browser->perform;
     $logger->logcroak( "\nCannot get $privoxytesturi -- $retcode "
           . $browser->strerror($retcode) . " "
@@ -915,14 +916,14 @@ while ( $circuit < $conf{circuits} ) {
         $browser->getinfo(CURLINFO_CONTENT_TYPE)
     ) unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq 'text/html';
 
-    $logger->trace($orgprivoxyprojectcheckhtml);
+    $logger->trace($orgprivoxyconfightml);
 
-    if ( $orgprivoxyprojectcheckhtml =~ m/Privoxy/ ) {
-        if ( $orgprivoxyprojectcheckhtml =~ m/127\.0\.0\.1/ ) {
+    if ( $orgprivoxyconfightml =~ m/Privoxy/ ) {
+        if ( $orgprivoxyconfightml =~ m/127\.0\.0\.1/ ) {
             $logger->debug("Privoxy state appears to be up.");
-            if ( $orgprivoxyprojectcheckhtml =~
+            if ( $orgprivoxyconfightml =~
                 m/port ($conf{ 'privoxyport' . $circuit })/
-                && $orgprivoxyprojectcheckhtml =~ m/ enabled/ )
+                && $orgprivoxyconfightml =~ m/ enabled/ )
             {
                 $logger->info("Privoxy state is up.");
 
@@ -984,25 +985,22 @@ m/Congratulations\. This browser is configured to use Tor\./
                 }
 
             }
-            elsif (
-                $orgprivoxyprojectcheckhtml =~ m/Privoxy is not being used/ )
-            {
+            elsif ( $orgprivoxyconfightml =~ m/Privoxy is not being used/ ) {
                 $logger->logcroak("Privoxy state is down.");
             }
             else {
                 $logger->logcroak(
-"Cannot determine Privoxy state: $orgprivoxyprojectcheckhtml"
-                );
+                    "Cannot determine Privoxy state: $orgprivoxyconfightml");
             }
         }
         else {
             $logger->logcroak(
-                "Cannot determine Privoxy state: $orgprivoxyprojectcheckhtml");
+                "Cannot determine Privoxy state: $orgprivoxyconfightml");
         }
     }
     else {
         $logger->logcroak(
-            "Cannot determine Privoxy state: $orgprivoxyprojectcheckhtml");
+            "Cannot determine Privoxy state: $orgprivoxyconfightml");
     }
 
     $logger->info(
@@ -1102,13 +1100,10 @@ $logger->info("Testing squid daemon running on port $conf{'squidport'}...");
 $browser->setopt( CURLOPT_PROXYPORT, $conf{'squidport'} );
 $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
 my $squidtesturi =
-    "http://mycache.example.com:"
-  . $conf{'squidport'}
-  . "/squid-internal-mgr/info
-";
+  "http://127.0.0.1:" . $conf{'squidport'} . "/squid-internal-mgr/info";
 $browser->setopt( CURLOPT_URL, $squidtesturi );
-my $orgsquidprojectcheckhtml;
-$browser->setopt( CURLOPT_WRITEDATA, \$orgsquidprojectcheckhtml );
+my $squidinternalmgrhtml;
+$browser->setopt( CURLOPT_WRITEDATA, \$squidinternalmgrhtml );
 $retcode = $browser->perform;
 $logger->logcroak( "\nCannot get $squidtesturi -- $retcode "
       . $browser->strerror($retcode) . " "
@@ -1120,13 +1115,13 @@ $logger->logcroak(
     $browser->getinfo(CURLINFO_CONTENT_TYPE)
 ) unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq 'text/html';
 
-$logger->trace($orgsquidprojectcheckhtml);
+$logger->trace($squidinternalmgrhtml);
 
-if ( $orgsquidprojectcheckhtml =~ m/Squid/ ) {
-    if ( $orgsquidprojectcheckhtml =~ m/127\.0\.0\.1/ ) {
+if ( $squidinternalmgrhtml =~ m/Squid/ ) {
+    if ( $squidinternalmgrhtml =~ m/127\.0\.0\.1/ ) {
         $logger->debug("Squid state appears to be up.");
-        if (   $orgsquidprojectcheckhtml =~ m/port ($conf{'squidport'})/
-            && $orgsquidprojectcheckhtml =~ m/ enabled/ )
+        if (   $squidinternalmgrhtml =~ m/port ($conf{'squidport'})/
+            && $squidinternalmgrhtml =~ m/ enabled/ )
         {
             $logger->info("Squid state is up.");
 
@@ -1190,22 +1185,21 @@ m/Congratulations\. This browser is configured to use Tor\./
             }
 
         }
-        elsif ( $orgsquidprojectcheckhtml =~ m/Squid is not being used/ ) {
+        elsif ( $squidinternalmgrhtml =~ m/Squid is not being used/ ) {
             $logger->logcroak("Squid state is down.");
         }
         else {
             $logger->logcroak(
-                "Cannot determine Squid state: $orgsquidprojectcheckhtml");
+                "Cannot determine Squid state: $squidinternalmgrhtml");
         }
     }
     else {
         $logger->logcroak(
-            "Cannot determine Squid state: $orgsquidprojectcheckhtml");
+            "Cannot determine Squid state: $squidinternalmgrhtml");
     }
 }
 else {
-    $logger->logcroak(
-        "Cannot determine Squid state: $orgsquidprojectcheckhtml");
+    $logger->logcroak("Cannot determine Squid state: $squidinternalmgrhtml");
 }
 
 $logger->info("Installation of squid on port $conf{'squidport'} is complete.");
