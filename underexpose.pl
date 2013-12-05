@@ -682,6 +682,10 @@ while ( $circuit < $conf{circuits} ) {
         &runcmd;
         $cmd = "chown \$(stat -c %U $tordatadir) $tordd";
         &runcmd;
+        $cmd = "semanage fcontext -a -e $tordatadir $tordd";
+        &runcmd;
+        $cmd = "restorecon -R -v $tordd";
+        &runcmd;
     }
     print CFG "DataDirectory $tordd\n";
     print CFG "User toranon\n";
@@ -695,6 +699,10 @@ while ( $circuit < $conf{circuits} ) {
     $cmd = "chgrp \$(stat -c %G $torcfg) $torc";
     &runcmd;
     $cmd = "chown \$(stat -c %U $torcfg) $torc";
+    &runcmd;
+    $cmd = "semanage fcontext -a -e $torcfg $torc";
+    &runcmd;
+    $cmd = "restorecon -R -v $torc";
     &runcmd;
 
 ################################################################################
@@ -812,6 +820,10 @@ while ( $circuit < $conf{circuits} ) {
     $cmd = "chgrp \$(stat -c %G $privoxycfg) $privoxyc";
     &runcmd;
     $cmd = "chown \$(stat -c %U $privoxycfg) $privoxyc";
+    &runcmd;
+    $cmd = "semanage fcontext -a -e $privoxycfg $privoxyc";
+    &runcmd;
+    $cmd = "restorecon -R -v $privoxyc";
     &runcmd;
 
 ################################################################################
@@ -978,6 +990,10 @@ if ( !-d $squiddd ) {
     &runcmd;
     $cmd = "chown \$(stat -c %U $squiddatadir) $squiddd";
     &runcmd;
+    $cmd = "semanage fcontext -a -e $squiddatadir $squiddd";
+    &runcmd;
+    $cmd = "restorecon -R -v $squiddd";
+    &runcmd;
 }
 print CFG "cache_dir ufs $squiddd 100 16 256\n";
 print CFG "access_log daemon:/var/log/squid/access_"
@@ -992,7 +1008,7 @@ print CFG "cache_log /var/log/squid/cache_" . $conf{'squidport'} . ".log\n";
 print CFG "coredump_dir $squiddatadir\n";
 print CFG "refresh_pattern ^ftp:\t\t1440\t20%\t10080\n";
 print CFG "refresh_pattern ^gopher:\t1440\t0%\t1440\n";
-print CFG "refresh_pattern -i (/cgi-bin/|\?) 0\t0%\t0\n";
+print CFG "refresh_pattern -i (/cgi-bin/|\\?) 0\t0%\t0\n";
 print CFG "refresh_pattern .\t\t0\t20%\t4320\n";
 print CFG "cache_effective_user squid\n";
 print CFG "announce_port 0\n";
@@ -1016,6 +1032,10 @@ $cmd = "chcon \$(stat -c %C $squidcfg) $squidc";
 $cmd = "chgrp \$(stat -c %G $squidcfg) $squidc";
 &runcmd;
 $cmd = "chown \$(stat -c %U $squidcfg) $squidc";
+&runcmd;
+$cmd = "semanage fcontext -a -e $squidcfg $squidc";
+&runcmd;
+$cmd = "restorecon -R -v $squidc";
 &runcmd;
 
 ################################################################################
@@ -1279,7 +1299,7 @@ sub testtor {
     if ($torport) {
         if ( $torport =~ /^\d+$/ ) {
             if ( $torport > 1023 && $torport < 49152 ) {
-                $logger->info( "    squid port: " . $torport );
+                $logger->info("Testing Tor via $proxytype on port $torport...");
             }
             else {
                 $logger->logcroak( $torport
