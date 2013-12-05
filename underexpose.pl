@@ -1077,9 +1077,7 @@ print INST "$cmd\n";
 ################################################################################
 $logger->info("Testing squid daemon running on port $conf{'squidport'}...");
 
-$browser->setopt( CURLOPT_PROXY,     "" );
-$browser->setopt( CURLOPT_PROXYPORT, "" );
-$browser->setopt( CURLOPT_PROXYTYPE, "" );
+$browser->setopt( CURLOPT_PROXY, "" );
 my $squidtesturi =
   "http://127.0.0.1:" . $conf{'squidport'} . "/squid-internal-mgr/info";
 $browser->setopt( CURLOPT_URL, $squidtesturi );
@@ -1092,9 +1090,9 @@ $logger->logcroak( "\nCannot get $squidtesturi -- $retcode "
       . "\n" )
   unless ( $retcode == 0 );
 $logger->logcroak(
-    "\nDid not receive HTML, got -- ",
+    "\nDid not receive text, got -- ",
     $browser->getinfo(CURLINFO_CONTENT_TYPE)
-) unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq 'text/html';
+) unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq 'text/plain';
 
 $logger->trace($squidinternalmgrhtml);
 
