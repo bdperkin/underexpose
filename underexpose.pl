@@ -622,7 +622,6 @@ foreach my $curlver (@curlversions) {
     }
 }
 
-$browser->setopt( CURLOPT_PROXY,     $curloptproxy );
 $browser->setopt( CURLOPT_USERAGENT, $curloptuseragent );
 my $retcode;
 
@@ -875,6 +874,7 @@ while ( $circuit < $conf{circuits} ) {
 "Testing privoxy daemon running on port $conf{'privoxyport' . $circuit}..."
     );
 
+    $browser->setopt( CURLOPT_PROXY,     $curloptproxy );
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'privoxyport' . $circuit } );
     $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
     my $privoxytesturi = "http://config.privoxy.org/";
@@ -1077,8 +1077,9 @@ print INST "$cmd\n";
 ################################################################################
 $logger->info("Testing squid daemon running on port $conf{'squidport'}...");
 
-$browser->setopt( CURLOPT_PROXYPORT, '' );
-$browser->setopt( CURLOPT_PROXYTYPE, '' );
+$browser->setopt( CURLOPT_PROXY,     "" );
+$browser->setopt( CURLOPT_PROXYPORT, "" );
+$browser->setopt( CURLOPT_PROXYTYPE, "" );
 my $squidtesturi =
   "http://127.0.0.1:" . $conf{'squidport'} . "/squid-internal-mgr/info";
 $browser->setopt( CURLOPT_URL, $squidtesturi );
@@ -1354,6 +1355,8 @@ sub checkconf {
 
 sub testtor {
     my ( $torport, $proxytype ) = @_;
+
+    $browser->setopt( CURLOPT_PROXY, $curloptproxy );
 
     if ($torport) {
         if ( $torport =~ /^\d+$/ ) {
