@@ -872,7 +872,7 @@ while ( $circuit < $conf{circuits} ) {
             {
                 $logger->info("Privoxy state is up.");
 
-                testtor( $conf{ 'torport' . $circuit }, "http" );
+                testtor( $conf{ 'privoxyport' . $circuit }, "http" );
 
                 $logger->info("Tor via Privoxy state is up.");
             }
@@ -1064,7 +1064,7 @@ if ( $squidinternalmgrhtml =~ m/Squid/ ) {
         {
             $logger->info("Squid state is up.");
 
-            testtor( $conf{ 'torport' . $circuit }, "http" );
+            testtor( $conf{'squidport'}, "http" );
 
             $logger->info("Tor via Privoxy via Squid state is up.");
         }
