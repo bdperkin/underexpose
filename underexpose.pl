@@ -1096,11 +1096,11 @@ $logger->logcroak(
 
 $logger->trace($squidinternalmgrhtml);
 
-if ( $squidinternalmgrhtml =~ m/Squid/ ) {
-    if ( $squidinternalmgrhtml =~ m/127\.0\.0\.1/ ) {
+if ( $squidinternalmgrhtml =~ m/Squid Object Cache/ ) {
+    if ( $squidinternalmgrhtml =~ m/Connection information for squid/ ) {
         $logger->debug("Squid state appears to be up.");
-        if (   $squidinternalmgrhtml =~ m/port ($conf{'squidport'})/
-            && $squidinternalmgrhtml =~ m/ enabled/ )
+        if (   $squidinternalmgrhtml =~ m/Cache information for squid/
+            && $squidinternalmgrhtml =~ m/Memory usage for squid via mallinfo/ )
         {
             $logger->info("Squid state is up.");
 
