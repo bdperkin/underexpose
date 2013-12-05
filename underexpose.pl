@@ -59,9 +59,6 @@ my $torsocksport      = "9050";    # Second-generation onion router port
 my $privoxylistenport = "8118";    # Privacy Enhancing Proxy port
 my $squidhttpport     = "3128";    # HTTP web proxy caching server port
 
-my $tortesturi = "https://check.torproject.org/?lang=en_US";
-my $orgtorprojectcheckhtml;
-
 my $privoxytesturi = "http://config.privoxy.org/";
 my $orgprivoxyconfightml;
 
@@ -724,58 +721,7 @@ while ( $circuit < $conf{circuits} ) {
     $logger->info(
         "Testing tor daemon running on port $conf{'torport' . $circuit}...");
 
-    $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'torport' . $circuit } );
-    $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5 );
-    $browser->setopt( CURLOPT_URL,       $tortesturi );
-    $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
-    $retcode = $browser->perform;
-    $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
-          . $browser->strerror($retcode) . " "
-          . $browser->errbuf
-          . "\n" )
-      unless ( $retcode == 0 );
-    $logger->logcroak(
-        "\nDid not receive HTML, got -- ",
-        $browser->getinfo(CURLINFO_CONTENT_TYPE)
-      )
-      unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
-      'text/html; charset=utf-8';
-
-    $logger->trace($orgtorprojectcheckhtml);
-
-    if (   $orgtorprojectcheckhtml =~ m/tor-o/
-        && $orgtorprojectcheckhtml =~ m/\.png/
-        && $orgtorprojectcheckhtml =~ m/Your IP address appears to be: / )
-    {
-        if ( $orgtorprojectcheckhtml =~ m/tor-on\.png/ ) {
-            $logger->debug("Tor state appears to be up.");
-            if ( $orgtorprojectcheckhtml =~
-                m/Congratulations\. This browser is configured to use Tor\./ )
-            {
-                $logger->info("Tor state is up.");
-            }
-            elsif (
-                $orgtorprojectcheckhtml =~ m/Sorry\. You are not using Tor\./ )
-            {
-                $logger->logcroak("Tor state is down.");
-            }
-            else {
-                $logger->logcroak(
-                    "Cannot determine Tor state: $orgtorprojectcheckhtml");
-            }
-        }
-        elsif ( $orgtorprojectcheckhtml =~ m/tor-off\.png/ ) {
-            $logger->logcroak("Tor state is down.");
-        }
-        else {
-            $logger->logcroak(
-                "Cannot determine Tor state: $orgtorprojectcheckhtml");
-        }
-    }
-    else {
-        $logger->logcroak(
-            "Cannot determine Tor state: $orgtorprojectcheckhtml");
-    }
+    testtor( $conf{ 'torport' . $circuit }, "socks" );
 
     $logger->info(
 "Installation of tor circuit $circuit on port $conf{'torport' . $circuit} is complete."
@@ -927,63 +873,9 @@ while ( $circuit < $conf{circuits} ) {
             {
                 $logger->info("Privoxy state is up.");
 
-                $browser->setopt( CURLOPT_URL,       $tortesturi );
-                $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
-                $retcode = $browser->perform;
-                $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
-                      . $browser->strerror($retcode) . " "
-                      . $browser->errbuf
-                      . "\n" )
-                  unless ( $retcode == 0 );
-                $logger->logcroak(
-                    "\nDid not receive HTML, got -- ",
-                    $browser->getinfo(CURLINFO_CONTENT_TYPE)
-                  )
-                  unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
-                  'text/html; charset=utf-8';
+                testtor( $conf{ 'torport' . $circuit }, "http" );
 
-                $logger->trace($orgtorprojectcheckhtml);
-
-                if (   $orgtorprojectcheckhtml =~ m/tor-o/
-                    && $orgtorprojectcheckhtml =~ m/\.png/
-                    && $orgtorprojectcheckhtml =~
-                    m/Your IP address appears to be: / )
-                {
-                    if ( $orgtorprojectcheckhtml =~ m/tor-on\.png/ ) {
-                        $logger->debug(
-                            "Tor via Privoxy state appears to be up.");
-                        if ( $orgtorprojectcheckhtml =~
-m/Congratulations\. This browser is configured to use Tor\./
-                          )
-                        {
-                            $logger->info("Tor via Privoxy state is up.");
-                        }
-                        elsif ( $orgtorprojectcheckhtml =~
-                            m/Sorry\. You are not using Tor\./ )
-                        {
-                            $logger->logcroak("Tor via Privoxy state is down.");
-                        }
-                        else {
-                            $logger->logcroak(
-"Cannot determine Tor via Privoxy state: $orgtorprojectcheckhtml"
-                            );
-                        }
-                    }
-                    elsif ( $orgtorprojectcheckhtml =~ m/tor-off\.png/ ) {
-                        $logger->logcroak("Tor via Privoxy state is down.");
-                    }
-                    else {
-                        $logger->logcroak(
-"Cannot determine Tor via Privoxy state: $orgtorprojectcheckhtml"
-                        );
-                    }
-                }
-                else {
-                    $logger->logcroak(
-"Cannot determine Tor via Privoxy state: $orgtorprojectcheckhtml"
-                    );
-                }
-
+                $logger->info("Tor via Privoxy state is up.");
             }
             elsif ( $orgprivoxyconfightml =~ m/Privoxy is not being used/ ) {
                 $logger->logcroak("Privoxy state is down.");
@@ -1071,7 +963,7 @@ $circuit = 0;
 while ( $circuit < $conf{circuits} ) {
     $circuit++;
     print CFG
-"cache_peer 127.0.0.1 parent $conf{'privoxyport' . $circuit} 0 no-query round-robin no-digest\n";
+"cache_peer 127.0.0.1 parent $conf{'privoxyport' . $circuit} 0 no-query round-robin no-digest name=localhost-$conf{'privoxyport' . $circuit}\n";
 }
 print CFG "hierarchy_stoplist cgi-bin \?\n";
 my $squiddd = $squiddatadir . "_" . $conf{'squidport'};
@@ -1173,65 +1065,9 @@ if ( $squidinternalmgrhtml =~ m/Squid/ ) {
         {
             $logger->info("Squid state is up.");
 
-            $browser->setopt( CURLOPT_URL,       $tortesturi );
-            $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
-            $retcode = $browser->perform;
-            $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
-                  . $browser->strerror($retcode) . " "
-                  . $browser->errbuf
-                  . "\n" )
-              unless ( $retcode == 0 );
-            $logger->logcroak(
-                "\nDid not receive HTML, got -- ",
-                $browser->getinfo(CURLINFO_CONTENT_TYPE)
-              )
-              unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
-              'text/html; charset=utf-8';
+            testtor( $conf{ 'torport' . $circuit }, "http" );
 
-            $logger->trace($orgtorprojectcheckhtml);
-
-            if (   $orgtorprojectcheckhtml =~ m/tor-o/
-                && $orgtorprojectcheckhtml =~ m/\.png/
-                && $orgtorprojectcheckhtml =~
-                m/Your IP address appears to be: / )
-            {
-                if ( $orgtorprojectcheckhtml =~ m/tor-on\.png/ ) {
-                    $logger->debug(
-                        "Tor via Privoxy via Squid state appears to be up.");
-                    if ( $orgtorprojectcheckhtml =~
-m/Congratulations\. This browser is configured to use Tor\./
-                      )
-                    {
-                        $logger->info("Tor via Privoxy via Squid state is up.");
-                    }
-                    elsif ( $orgtorprojectcheckhtml =~
-                        m/Sorry\. You are not using Tor\./ )
-                    {
-                        $logger->logcroak(
-                            "Tor via Privoxy via Squid state is down.");
-                    }
-                    else {
-                        $logger->logcroak(
-"Cannot determine Tor via Privoxy via Squid state: $orgtorprojectcheckhtml"
-                        );
-                    }
-                }
-                elsif ( $orgtorprojectcheckhtml =~ m/tor-off\.png/ ) {
-                    $logger->logcroak(
-                        "Tor via Privoxy via Squid state is down.");
-                }
-                else {
-                    $logger->logcroak(
-"Cannot determine Tor via Privoxy via Squid state: $orgtorprojectcheckhtml"
-                    );
-                }
-            }
-            else {
-                $logger->logcroak(
-"Cannot determine Tor via Privoxy via Squid state: $orgtorprojectcheckhtml"
-                );
-            }
-
+            $logger->info("Tor via Privoxy via Squid state is up.");
         }
         elsif ( $squidinternalmgrhtml =~ m/Squid is not being used/ ) {
             $logger->logcroak("Squid state is down.");
@@ -1435,6 +1271,95 @@ sub checkconf {
     else {
         $logger->logcroak(
             $conf{'squidport'} . " is not a positive integer for squid port" );
+    }
+}
+
+sub testtor {
+    my ( $torport, $proxytype ) = @_;
+
+    if ($torport) {
+        if ( $torport =~ /^\d+$/ ) {
+            if ( $torport > 1023 && $torport < 49152 ) {
+                $logger->info( "    squid port: " . $torport );
+            }
+            else {
+                $logger->logcroak( $torport
+                      . " is not in the registered port range for squid port" );
+            }
+        }
+        else {
+            $logger->logcroak(
+                $torport . " is not a positive integer for squid port" );
+        }
+
+    }
+    else {
+        $logger->logcroak("Port not specified for Tor test");
+    }
+    $browser->setopt( CURLOPT_PROXYPORT, $torport );
+
+    if ( $proxytype =~ m/socks/ ) {
+        $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5 );
+    }
+    elsif ( $proxytype =~ m/http/ ) {
+        $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+    }
+    else {
+        $logger->logcroak("$proxytype is an unknown proxy type");
+    }
+
+    my $tortesturi = "https://check.torproject.org/?lang=en_US";
+    my $orgtorprojectcheckhtml;
+
+    $browser->setopt( CURLOPT_URL,       $tortesturi );
+    $browser->setopt( CURLOPT_WRITEDATA, \$orgtorprojectcheckhtml );
+    $retcode = $browser->perform;
+    $logger->logcroak( "\nCannot get $tortesturi -- $retcode "
+          . $browser->strerror($retcode) . " "
+          . $browser->errbuf
+          . "\n" )
+      unless ( $retcode == 0 );
+    $logger->logcroak(
+        "\nDid not receive HTML, got -- ",
+        $browser->getinfo(CURLINFO_CONTENT_TYPE)
+      )
+      unless $browser->getinfo(CURLINFO_CONTENT_TYPE) eq
+      'text/html; charset=utf-8';
+
+    $logger->trace($orgtorprojectcheckhtml);
+
+    if (   $orgtorprojectcheckhtml =~ m/tor-o/
+        && $orgtorprojectcheckhtml =~ m/\.png/
+        && $orgtorprojectcheckhtml =~ m/Your IP address appears to be: / )
+    {
+        if ( $orgtorprojectcheckhtml =~ m/tor-on\.png/ ) {
+            $logger->debug("Tor state appears to be up.");
+            if ( $orgtorprojectcheckhtml =~
+                m/Congratulations\. This browser is configured to use Tor\./ )
+            {
+                $logger->info("Tor state is up.");
+            }
+            elsif (
+                $orgtorprojectcheckhtml =~ m/Sorry\. You are not using Tor\./ )
+            {
+                $logger->logcroak("Tor state is down.");
+            }
+            else {
+                $logger->logcroak(
+                    "Cannot determine Tor state: $orgtorprojectcheckhtml");
+            }
+        }
+        elsif ( $orgtorprojectcheckhtml =~ m/tor-off\.png/ ) {
+            $logger->logcroak("Tor state is down.");
+        }
+        else {
+            $logger->logcroak(
+                "Cannot determine Tor state: $orgtorprojectcheckhtml");
+        }
+    }
+    else {
+        $logger->logcroak(
+            "Cannot determine Tor state: $orgtorprojectcheckhtml");
     }
 }
 
