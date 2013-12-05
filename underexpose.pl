@@ -1077,8 +1077,8 @@ print INST "$cmd\n";
 ################################################################################
 $logger->info("Testing squid daemon running on port $conf{'squidport'}...");
 
-$browser->setopt( CURLOPT_PROXYPORT, NULL );
-$browser->setopt( CURLOPT_PROXYTYPE, NULL );
+$browser->setopt( CURLOPT_PROXYPORT, );
+$browser->setopt( CURLOPT_PROXYTYPE, );
 my $squidtesturi =
   "http://127.0.0.1:" . $conf{'squidport'} . "/squid-internal-mgr/info";
 $browser->setopt( CURLOPT_URL, $squidtesturi );
