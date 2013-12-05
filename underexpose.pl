@@ -59,9 +59,6 @@ my $torsocksport      = "9050";    # Second-generation onion router port
 my $privoxylistenport = "8118";    # Privacy Enhancing Proxy port
 my $squidhttpport     = "3128";    # HTTP web proxy caching server port
 
-my $privoxytesturi = "http://config.privoxy.org/";
-my $orgprivoxyconfightml;
-
 my ( $wtr, $rdr, $err, $cmd );
 use Symbol 'gensym';
 $err = gensym;
@@ -849,7 +846,9 @@ while ( $circuit < $conf{circuits} ) {
 
     $browser->setopt( CURLOPT_PROXYPORT, $conf{ 'privoxyport' . $circuit } );
     $browser->setopt( CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
-    $browser->setopt( CURLOPT_URL,       $privoxytesturi );
+    my $privoxytesturi = "http://config.privoxy.org/";
+    $browser->setopt( CURLOPT_URL, $privoxytesturi );
+    my $orgprivoxyconfightml;
     $browser->setopt( CURLOPT_WRITEDATA, \$orgprivoxyconfightml );
     $retcode = $browser->perform;
     $logger->logcroak( "\nCannot get $privoxytesturi -- $retcode "
