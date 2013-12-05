@@ -69,7 +69,6 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %{__rm} -rf $RPM_BUILD_ROOT
 %{__mkdir_p} %{buildroot}%{_bindir}
 %{__mkdir_p} %{buildroot}%{_prefix}/lib/systemd/system
-%{__mkdir_p} %{buildroot}%{_sysconfdir}/systemd/system/%{name}.target.wants
 %{__mkdir_p} %{buildroot}%{_mandir}/man8
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/%{name}
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/logrotate.d
@@ -99,7 +98,6 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %doc %{_mandir}/man8/%{name}.8.gz
 %dir %{_var}/log/%{name}
 %dir %{_sysconfdir}/%{name}
-%dir %{_sysconfdir}/systemd/system/%{name}.target.wants
 %config %{_sysconfdir}/%{name}/%{name}.conf
 %config %{_sysconfdir}/%{name}/log4perl.conf
 %config %{_sysconfdir}/logrotate.d/%{name}
