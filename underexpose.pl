@@ -526,6 +526,17 @@ if ($optuninst) {
                 $logger->logcroak("Unknown semanage port command: $cmd");
             }
         }
+        if ( $cmd =~ m/^semanage fcontext / ) {
+            if ( $cmd =~ m/^semanage fcontext -a / ) {
+                $cmd =~ s/^semanage fcontext -a /semanage fcontext -d /g;
+            }
+            elsif ( $cmd =~ m/^semanage fcontext -d / ) {
+                $cmd =~ s/^semanage fcontext -d /semanage fcontext -a /g;
+            }
+            else {
+                $logger->logcroak("Unknown semanage fcontext command: $cmd");
+            }
+        }
         $cmd =~ s /^systemctl enable /systemctl disable /g;
         $cmd =~ s /^systemctl start /systemctl stop /g;
         $cmd =~ s /^touch /rm /g;
@@ -620,6 +631,11 @@ $cmd = "semanage port -E | sort > $tmpdirname/seports.before";
 $logger->debug("Getting SELinux port status before run");
 &runcmd;
 
+# Get SELinux fcontext status before run
+$cmd = "semanage fcontext -E | sort > $tmpdirname/sefcontexts.before";
+$logger->debug("Getting SELinux fcontext status before run");
+&runcmd;
+
 my $circuit = 0;
 while ( $circuit < $conf{circuits} ) {
     $circuit++;
@@ -682,7 +698,8 @@ while ( $circuit < $conf{circuits} ) {
         &runcmd;
         $cmd = "chown \$(stat -c %U $tordatadir) $tordd";
         &runcmd;
-        $cmd = "semanage fcontext -a -e $tordatadir $tordd";
+        $cmd =
+"semanage fcontext -a -e $tordatadir $tordd ; if [ \$? -ne 0 ]; then semanage fcontext -m -e $tordatadir $tordd; fi";
         &runcmd;
         $cmd = "restorecon -R -v $tordd";
         &runcmd;
@@ -700,7 +717,8 @@ while ( $circuit < $conf{circuits} ) {
     &runcmd;
     $cmd = "chown \$(stat -c %U $torcfg) $torc";
     &runcmd;
-    $cmd = "semanage fcontext -a -e $torcfg $torc";
+    $cmd =
+"semanage fcontext -a -e $torcfg $torc ; if [ \$? -ne 0 ]; then semanage fcontext -m -e $torcfg $torc; fi";
     &runcmd;
     $cmd = "restorecon -R -v $torc";
     &runcmd;
@@ -821,7 +839,8 @@ while ( $circuit < $conf{circuits} ) {
     &runcmd;
     $cmd = "chown \$(stat -c %U $privoxycfg) $privoxyc";
     &runcmd;
-    $cmd = "semanage fcontext -a -e $privoxycfg $privoxyc";
+    $cmd =
+"semanage fcontext -a -e $privoxycfg $privoxyc ; if [ \$? -ne 0 ]; then semanage fcontext -m -e $privoxycfg $privoxyc; fi";
     &runcmd;
     $cmd = "restorecon -R -v $privoxyc";
     &runcmd;
@@ -990,7 +1009,8 @@ if ( !-d $squiddd ) {
     &runcmd;
     $cmd = "chown \$(stat -c %U $squiddatadir) $squiddd";
     &runcmd;
-    $cmd = "semanage fcontext -a -e $squiddatadir $squiddd";
+    $cmd =
+"semanage fcontext -a -e $squiddatadir $squiddd ; if [ \$? -ne 0 ]; then semanage fcontext -m -e $squiddatadir $squiddd; fi";
     &runcmd;
     $cmd = "restorecon -R -v $squiddd";
     &runcmd;
@@ -1033,7 +1053,8 @@ $cmd = "chgrp \$(stat -c %G $squidcfg) $squidc";
 &runcmd;
 $cmd = "chown \$(stat -c %U $squidcfg) $squidc";
 &runcmd;
-$cmd = "semanage fcontext -a -e $squidcfg $squidc";
+$cmd =
+"semanage fcontext -a -e $squidcfg $squidc ; if [ \$? -ne 0 ]; then semanage fcontext -m -e $squidcfg $squidc; fi";
 &runcmd;
 $cmd = "restorecon -R -v $squidc";
 &runcmd;
@@ -1150,6 +1171,44 @@ while (<SEDIFF>) {
 close(SEDIFF);
 
 close(INST);
+
+# Get SELinux fcontext status after run
+$cmd = "semanage fcontext -E | sort > $tmpdirname/sefcontexts.after";
+$logger->debug("Getting SELinux fcontext status after run");
+&runcmd;
+
+# Get SELinux fcontext type subtractions
+$cmd =
+"comm --nocheck-order -23 $tmpdirname/sefcontexts.{before,after} | sort > $tmpdirname/sefcontexts.subtracted";
+$logger->debug("Getting SELinux fcontext type subtractions");
+&runcmd;
+
+unless ( open( SEDIFF, "$tmpdirname/sefcontexts.subtracted" ) ) {
+    $logger->logcroak(
+        "Cannot open $tmpdirname/sefcontexts.subtracted for reading");
+}
+while (<SEDIFF>) {
+    $_ =~ s/^fcontext -a /fcontext -d /g;
+    print INST "semanage $_";
+}
+close(SEDIFF);
+
+# Get SELinux fcontext type additions
+$cmd =
+"comm --nocheck-order -13 $tmpdirname/sefcontexts.{before,after} | sort > $tmpdirname/sefcontexts.added";
+$logger->debug("Getting SELinux fcontext type additions");
+&runcmd;
+
+unless ( open( SEDIFF, "$tmpdirname/sefcontexts.added" ) ) {
+    $logger->logcroak("Cannot open $tmpdirname/sefcontexts.added for reading");
+}
+while (<SEDIFF>) {
+    print INST "semanage $_";
+}
+close(SEDIFF);
+
+close(INST);
+
 $logger->info("Done.");
 exit 0;
 
