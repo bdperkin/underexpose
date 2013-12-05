@@ -7,7 +7,7 @@ After=syslog.target network.target nss-lookup.target %{NAME}.target
 Type=forking
 PIDFile=/var/run/squid_%i.pid
 ExecStart=/usr/sbin/squid $SQUID_OPTS -f /etc/squid/squid.conf_%i
-ExecStartPre=export SQUID_CONF=/etc/squid/squid.conf_%i && /usr/libexec/squid/cache_swap.sh
+ExecStartPre=/usr/sbin/squid -N -z -F -f /etc/squid/squid.conf_%i | tee -a /var/log/squid/squid_%i.out 2>&1
 ExecReload=/usr/sbin/squid $SQUID_OPTS -k reconfigure -f /etc/squid/squid.conf_%i
 ExecStop=/usr/sbin/squid -k shutdown -f /etc/squid/squid.conf_%i
 TimeoutSec=30
