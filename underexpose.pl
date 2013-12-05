@@ -1057,17 +1057,65 @@ print CFG "http_access allow localhost manager\n";
 print CFG "http_access deny manager\n";
 print CFG "http_access deny !Safe_ports\n";
 print CFG "http_access deny CONNECT !SSL_ports\n";
-print CFG "#http_access deny to_localhost\n";
+print CFG "http_access deny to_localhost\n";
 print CFG "http_access allow localnet\n";
 print CFG "http_access allow localhost\n";
 print CFG "http_access deny all\n";
+print CFG "icp_access deny all\n";
+print CFG "htcp_access deny all\n";
+print CFG "htcp_clr_access deny all\n";
+print CFG "ident_lookup_access deny all\n";
 print CFG "http_port $conf{'squidport'}\n";
-print CFG "#cache_dir ufs $squiddatadir 100 16 256\n";
+$circuit = 0;
+
+while ( $circuit < $conf{circuits} ) {
+    $circuit++;
+    print CFG
+"cache_peer 127.0.0.1 parent $conf{'privoxyport' . $circuit} 0 no-query round-robin no-digest\n";
+}
+print CFG "hierarchy_stoplist cgi-bin \?\n";
+my $squiddd = $squiddatadir . "_" . $conf{'squidport'};
+if ( !-d $squiddd ) {
+    unless ( mkdir($squiddd) ) {
+        $logger->logcroak("Unable to create direcsquidy $squiddd: $!");
+    }
+    $cmd = "chmod \$(stat -c %a $squiddatadir) $squiddd";
+    &runcmd;
+    $cmd = "chcon \$(stat -c %C $squiddatadir) $squiddd";
+    &runcmd;
+    $cmd = "chgrp \$(stat -c %G $squiddatadir) $squiddd";
+    &runcmd;
+    $cmd = "chown \$(stat -c %U $squiddatadir) $squiddd";
+    &runcmd;
+}
+print CFG "cache_dir ufs $squiddd 100 16 256\n";
+print CFG "access_log daemon:/var/log/squid/access_"
+  . $conf{'squidport'}
+  . ".log squid\n";
+print CFG "cache_store_log daemon:/var/log/squid/store_"
+  . $conf{'squidport'}
+  . ".log squid\n";
+print CFG "log_mime_hdrs on\n";
+print CFG "pid_filename /var/run/squid_" . $conf{'squidport'} . ".pid\n";
+print CFG "cache_log /var/log/squid/cache_" . $conf{'squidport'} . ".log\n";
 print CFG "coredump_dir $squiddatadir\n";
 print CFG "refresh_pattern ^ftp:\t\t1440\t20%\t10080\n";
 print CFG "refresh_pattern ^gopher:\t1440\t0%\t1440\n";
 print CFG "refresh_pattern -i (/cgi-bin/|\?) 0\t0%\t0\n";
 print CFG "refresh_pattern .\t\t0\t20%\t4320\n";
+print CFG "cache_effective_user squid\n";
+print CFG "announce_port 0\n";
+print CFG "snmp_port 0\n";
+print CFG "snmp_access deny all\n";
+print CFG "icp_port 0\n";
+print CFG "htcp_port 0\n";
+print CFG "log_icp_queries on\n";
+print CFG "mcast_miss_port 0\n";
+print CFG "always_direct deny all\n";
+print CFG "never_direct allow all\n";
+print CFG "forwarded_for delete\n";
+print CFG "connect_retries 1\n";
+print CFG "retry_on_error on\n";
 
 close(CFG);
 $cmd = "chmod \$(stat -c %a $squidcfg) $squidc";
