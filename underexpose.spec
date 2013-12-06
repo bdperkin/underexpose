@@ -1,5 +1,5 @@
 Name:		underexpose
-Version:	0.0.2
+Version:	0.0.3
 Release:	1%{?dist}
 Summary:	Anonymous, private, and caching web proxy installer.
 
@@ -105,6 +105,56 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %config %{_sysconfdir}/sysconfig/tor
 
 %changelog
+* Fri Dec 06 2013 Brandon Perkins <bperkins@redhat.com> 0.0.3-1
+- cURL options
+- Parse command line options
+- Initialize GetOptions variables
+- Help function
+- Version function
+- Initialize Logger
+- Set output level
+- If multiple outputs are specified, the most verbose will be used
+- Setup temporary directory
+- Determine if SELinux is enabled and enforcing
+- SELinux port types
+- Configuration file locations
+- Log rotate file locations
+- Data directory locations
+- Log directory locations
+- Checking for invalid options
+- Running Setup
+- Running Uninstaller
+- Running Installer
+- cURL browser setup
+- Get SELinux port status before run
+- Get SELinux fcontext status before run
+- Tor Circuit installation
+- Tor SELinux port type modifications
+- Tor configuration file generation
+- Tor systemd system and service management
+- Tor simple tests
+- Privoxy Circuit installation
+- Privoxy SELinux port type modifications
+- Privoxy configuration file generation
+- Privoxy systemd system and service management
+- Privoxy simple tests
+- Squid installation
+- Squid SELinux port type modifications
+- Squid configuration file generation
+- Squid systemd system and service management
+- Squid simple tests
+- systemd system and service management
+- Get SELinux port status after run
+- Get SELinux port type subtractions
+- Get SELinux port type additions
+- Get SELinux fcontext status after run
+- Get SELinux fcontext type subtractions
+- Get SELinux fcontext type additions
+- Load all command-line arguments into hash
+- Read all configuration file variables and values into hash
+- Write all configuration variables and values into configuration file
+- Check all configuration variables for validity
+- Run system calls/commands
 * Fri Oct 25 2013 Brandon Perkins <bperkins@redhat.com> 0.0.2-1
 - Use tito CustomBuilder. (bperkins@redhat.com)
 - Add groff2pod for document building. (bperkins@redhat.com)
