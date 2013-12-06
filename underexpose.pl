@@ -465,7 +465,7 @@ while ( $circuit < $conf{circuits} ) {
     my @loglevels = ( "debug", "info", "notice", "warn", "err" );
     foreach my $loglevel (@loglevels) {
         my $logf =
-            "$torlogdir"
+            "$torlogdir/"
           . $loglevel . "_"
           . $conf{ 'torport' . $circuit } . ".log";
         print CFG "Log $loglevel file $logf\n";
