@@ -1,16 +1,37 @@
 Command line options are used to specify various startup options for %{NAMELOWER}:
 
+*-c* 'circuits', *--circuits*='circuits'::
+    Number of circuits (Tor-Privoxy pairs) that should be installed.
+
+*-C* 'configdir', *--configdir*='configdir'::
+    Configuration directory.
+
 *-d*, *--debug*::
     Debug output.
+
+*-D* 'docdir', *--docdir*='docdir'::
+    Documentation directory.
 
 *-h*, *--help*::
     Print or show help information and exit.
 
+*-L* 'logdir', *--logdir*='logdir'::
+    Log directory.
+
 *-m*, *--man*::
     Print the entire manual page and exit.
 
+*-M* 'mandir', *--mandir*='mandir'::
+    Reference manuals directory.
+
 *-q*, *--quiet*::
     Quiet output.
+
+*-S*, *--setup*::
+    Run setup only (no installation).
+
+*-U*, *--uninstall*::
+    Run uninstallation.
 
 *-v*, *--verbose*::
     Verbose output.

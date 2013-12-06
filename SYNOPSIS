@@ -1,4 +1,8 @@
+*%{NAME}* {*--setup*|*-S*} [*-q*|*--quiet*] [*-v*|*--verbose*] [*-d*|*--debug*] [*-c* 'circuits'|*--circuits*='circuits']
+
 *%{NAME}* [*-q*|*--quiet*] [*-v*|*--verbose*] [*-d*|*--debug*]
+
+*%{NAME}* {*--uninstall*|*-U*} [*-q*|*--quiet*] [*-v*|*--verbose*] [*-d*|*--debug*] [*-c* 'circuits'|*--circuits*='circuits']
 
 *%{NAME}* {*--version*|*-V*}
 

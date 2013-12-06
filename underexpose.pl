@@ -19,21 +19,22 @@
 # USA.
 #
 
-################################################################################
+##############################################################################
 # Import some semantics into the current package from the named modules
-################################################################################
+##############################################################################
 use strict;                 # Restrict unsafe constructs
 use warnings;               # Control optional warnings
 use File::Basename;         # Parse file paths into directory,
                             # filename and suffix.
 use File::Path;             # Create or remove directory trees
 use File::ReadBackwards;    # Read a file backwards by lines.
-use File::Temp;             # Return name and handle of a temporary file safely
+use File::Temp;             # Return name and handle of a temporary
+                            # file safely
 use Getopt::Long;           # Getopt::Long - Extended processing
                             # of command line options
 use IO::Select;             # OO interface to the select system call
-use IPC::Open3;             # Open a process for reading, writing, and error
-                            # handling using open3()
+use IPC::Open3;             # Open a process for reading, writing,
+                            # and error handling using open3()
 use Log::Log4perl;          # Log4j implementation for Perl
 use Pod::Usage;             # Pod::Usage, pod2usage() - print a
                             # usage message from embedded pod
@@ -41,9 +42,9 @@ use Pod::Usage;             # Pod::Usage, pod2usage() - print a
 use WWW::Curl::Easy;        # WWW::Curl - Perl extension interface
                             # for libcurl
 
-################################################################################
+##############################################################################
 # Declare constants
-################################################################################
+##############################################################################
 binmode STDOUT, ":utf8";    # Output UTF-8 using the :utf8 output layer.
                             # This ensures that the output is completely
                             # UTF-8, and removes any debug warnings.
@@ -63,17 +64,17 @@ my ( $wtr, $rdr, $err, $cmd );
 use Symbol 'gensym';
 $err = gensym;
 
-################################################################################
+##############################################################################
 # Specify module configuration options to be enabled
-################################################################################
+##############################################################################
 # Allow single-character options to be bundled. To distinguish bundles from long
 # option names, long options must be introduced with '--' and bundles with '-'.
 # Do not allow '+' to start options.
 Getopt::Long::Configure(qw(bundling no_getopt_compat));
 
-################################################################################
+##############################################################################
 # Initialize variables
-################################################################################
+##############################################################################
 my $DBG           = 1;    # Set debug output level:
                           #   0 -- quiet
                           #   1 -- normal
@@ -85,230 +86,17 @@ my @ARGVOPTS = @ARGV;     # Store original command-line arguments
 my %conf;                 # Active configuration
 my %confargs;             # Configuration provided by command-line
 
-################################################################################
+##############################################################################
 # cURL options
-################################################################################
-my $curloptaccepttimeoutms         = '';
-my $curloptacceptencoding          = '';
-my $curloptaddressscope            = '';
-my $curloptappend                  = '';
-my $curloptautoreferer             = '';
-my $curloptbuffersize              = '';
-my $curloptcainfo                  = '';
-my $curloptcapath                  = '';
-my $curloptcertinfo                = '';
-my $curloptchunkbgnfunction        = '';
-my $curloptchunkdata               = '';
-my $curloptchunkendfunction        = '';
-my $curloptclosefunction           = '';
-my $curloptclosepolicy             = '';
-my $curloptclosesocketdata         = '';
-my $curloptclosesocketfunction     = '';
-my $curloptconnecttimeout          = '';
-my $curloptconnecttimeoutms        = '';
-my $curloptconnectonly             = '';
-my $curloptconvfromnetworkfunction = '';
-my $curloptconvfromutf8function    = '';
-my $curloptconvtonetworkfunction   = '';
-my $curloptcookie                  = '';
-my $curloptcookiefile              = '';
-my $curloptcookiejar               = '';
-my $curloptcookielist              = '';
-my $curloptcookiesession           = '';
-my $curloptcopypostfields          = '';
-my $curloptcrlf                    = '';
-my $curloptcrlfile                 = '';
-my $curloptcustomrequest           = '';
-my $curloptdebugdata               = '';
-my $curloptdebugfunction           = '';
-my $curloptdirlistonly             = '';
-my $curloptdnscachetimeout         = '';
-my $curloptdnsservers              = '';
-my $curloptdnsuseglobalcache       = '';
-my $curloptegdsocket               = '';
-my $curloptencoding                = '';
-my $curlopterrorbuffer             = '';
-my $curloptfailonerror             = '';
-my $curloptfile                    = '';
-my $curloptfiletime                = '';
-my $curloptfnmatchdata             = '';
-my $curloptfnmatchfunction         = '';
-my $curloptfollowlocation          = '';
-my $curloptforbidreuse             = '';
-my $curloptfreshconnect            = '';
-my $curloptftpappend               = '';
-my $curloptftpascii                = '';
-my $curloptftplistonly             = '';
-my $curloptftpport                 = '';
-my $curloptftpsslauth              = '';
-my $curloptftpaccount              = '';
-my $curloptftpalternativetouser    = '';
-my $curloptftpcreatemissingdirs    = '';
-my $curloptftpfilemethod           = '';
-my $curloptftpresponsetimeout      = '';
-my $curloptftpskippasvip           = '';
-my $curloptftpssl                  = '';
-my $curloptftpsslccc               = '';
-my $curloptftpuseeprt              = '';
-my $curloptftpuseepsv              = '';
-my $curloptftpusepret              = '';
-my $curloptgssapidelegation        = '';
-my $curloptheader                  = '';
-my $curloptheaderdata              = '';
-my $curloptheaderfunction          = '';
-my $curlopthttp200aliases          = '';
-my $curlopthttpauth                = '';
-my $curlopthttpget                 = '';
-my $curlopthttpheader              = '';
-my $curlopthttppost                = '';
-my $curlopthttpproxytunnel         = '';
-my $curlopthttprequest             = '';
-my $curlopthttpcontentdecoding     = '';
-my $curlopthttptransferdecoding    = '';
-my $curlopthttpversion             = '';
-my $curloptignorecontentlength     = '';
-my $curloptinfile                  = '';
-my $curloptinfilesize              = '';
-my $curloptinfilesizelarge         = '';
-my $curloptinterface               = '';
-my $curloptinterleavedata          = '';
-my $curloptinterleavefunction      = '';
-my $curloptioctldata               = '';
-my $curloptioctlfunction           = '';
-my $curloptipresolve               = '';
-my $curloptissuercert              = '';
-my $curloptkeypasswd               = '';
-my $curloptkrb4level               = '';
-my $curloptkrblevel                = '';
-my $curloptlocalport               = '';
-my $curloptlocalportrange          = '';
-my $curloptlowspeedlimit           = '';
-my $curloptlowspeedtime            = '';
-my $curloptmailauth                = '';
-my $curloptmailfrom                = '';
-my $curloptmailrcpt                = '';
-my $curloptmaxconnects             = '';
-my $curloptmaxfilesize             = '';
-my $curloptmaxfilesizelarge        = '';
-my $curloptmaxredirs               = '';
-my $curloptmaxrecvspeedlarge       = '';
-my $curloptmaxsendspeedlarge       = '';
-my $curloptmute                    = '';
-my $curloptnetrc                   = '';
-my $curloptnetrcfile               = '';
-my $curloptnewdirectoryperms       = '';
-my $curloptnewfileperms            = '';
-my $curloptnobody                  = '';
-my $curloptnoprogress              = '';
-my $curloptnoproxy                 = '';
-my $curloptnosignal                = '';
-my $curloptnothing                 = '';
-my $curloptopensocketdata          = '';
-my $curloptopensocketfunction      = '';
-my $curloptpasswddata              = '';
-my $curloptpasswdfunction          = '';
-my $curloptpassword                = '';
-my $curloptpasvhost                = '';
-my $curloptport                    = '';
-my $curloptpost                    = '';
-my $curloptpost301                 = '';
-my $curloptpostfields              = '';
-my $curloptpostfieldsize           = '';
-my $curloptpostfieldsizelarge      = '';
-my $curloptpostquote               = '';
-my $curloptpostredir               = '';
-my $curloptprequote                = '';
-my $curloptprivate                 = '';
-my $curloptprogressdata            = '';
-my $curloptprotocols               = '';
-my $curloptproxy                   = "127.0.0.1";
-my $curloptproxyauth               = '';
-my $curloptproxypassword           = '';
-my $curloptproxyusername           = '';
-my $curloptproxyuserpwd            = '';
-my $curloptproxytransfermode       = '';
-my $curloptput                     = '';
-my $curloptquote                   = '';
-my $curloptrandomfile              = '';
-my $curloptrange                   = '';
-my $curloptreaddata                = '';
-my $curloptreadfunction            = '';
-my $curloptredirprotocols          = '';
-my $curloptreferer                 = '';
-my $curloptresolve                 = '';
-my $curloptresumefrom              = '';
-my $curloptresumefromlarge         = '';
-my $curloptrtspheader              = '';
-my $curloptrtspclientcseq          = '';
-my $curloptrtsprequest             = '';
-my $curloptrtspservercseq          = '';
-my $curloptrtspsessionid           = '';
-my $curloptrtspstreamuri           = '';
-my $curloptrtsptransport           = '';
-my $curloptseekdata                = '';
-my $curloptseekfunction            = '';
-my $curloptserverresponsetimeout   = '';
-my $curloptshare                   = '';
-my $curloptsockoptdata             = '';
-my $curloptsockoptfunction         = '';
-my $curloptsocks5gssapinec         = '';
-my $curloptsocks5gssapiservice     = '';
-my $curloptsourcehost              = '';
-my $curloptsourcepath              = '';
-my $curloptsourceport              = '';
-my $curloptsourcepostquote         = '';
-my $curloptsourceprequote          = '';
-my $curloptsourcequote             = '';
-my $curloptsourceurl               = '';
-my $curloptsourceuserpwd           = '';
-my $curloptsslcert                 = '';
-my $curloptsslcertpasswd           = '';
-my $curloptsslcerttype             = '';
-my $curloptsslengine               = '';
-my $curloptsslenginedefault        = '';
-my $curloptsslkey                  = '';
-my $curloptsslkeypasswd            = '';
-my $curloptsslkeytype              = '';
-my $curloptsslversion              = '';
-my $curloptsslcipherlist           = '';
-my $curloptsslctxdata              = '';
-my $curloptsslctxfunction          = '';
-my $curloptssloptions              = '';
-my $curloptsslsessionidcache       = '';
-my $curloptsslverifyhost           = '';
-my $curloptsslverifypeer           = '';
-my $curloptstderr                  = '';
-my $curlopttcpkeepalive            = '';
-my $curlopttcpkeepidle             = '';
-my $curlopttcpkeepintvl            = '';
-my $curlopttcpnodelay              = '';
-my $curlopttelnetoptions           = '';
-my $curlopttftpblksize             = '';
-my $curlopttimecondition           = '';
-my $curlopttimeout                 = '';
-my $curlopttimeoutms               = '';
-my $curlopttimevalue               = '';
-my $curlopttlsauthpassword         = '';
-my $curlopttlsauthtype             = '';
-my $curlopttlsauthusername         = '';
-my $curlopttransfertext            = '';
-my $curlopttransferencoding        = '';
-my $curloptunrestrictedauth        = '';
-my $curloptupload                  = '';
-my $curloptuseragent               = "$name/$version";
-my $curloptusername                = '';
-my $curloptuserpwd                 = '';
-my $curloptusessl                  = '';
-my $curloptverbose                 = 0;
-my $curloptwildcardmatch           = '';
-my $curloptwritefunction           = '';
-my $curloptwriteheader             = '';
-my $curloptwriteinfo               = '';
+##############################################################################
+my $curloptproxy     = "127.0.0.1";
+my $curloptuseragent = "$name/$version";
+my $curloptverbose   = 0;
 
-################################################################################
-# Parse command line options.  This function adheres to the POSIX syntax for CLI
-# options, with GNU extensions.
-################################################################################
+##############################################################################
+# Parse command line options.  This function adheres to the POSIX syntax
+# for CLI options, with GNU extensions.
+##############################################################################
 # Initialize GetOptions variables
 my $optcnfdir = "/etc/$name";
 my $optdebug;
@@ -352,23 +140,23 @@ GetOptions(
     "version"     => \$optversion
 ) or pod2usage(2);
 
-################################################################################
+##############################################################################
 # Help function
-################################################################################
+##############################################################################
 pod2usage(1) if $opthelp;
 pod2usage( -exitstatus => 0, -verbose => 2 ) if $optman;
 
-################################################################################
+##############################################################################
 # Version function
-################################################################################
+##############################################################################
 if ($optversion) {
     print "$name $version ($release)\n";
     exit 0;
 }
 
-################################################################################
+##############################################################################
 # Initialize Logger
-################################################################################
+##############################################################################
 my $logcnf = $optcnfdir . "/log4perl.conf";
 unless ( -f "$logcnf" && -r "$logcnf" ) {
     die "Cannot read Log4perl configuration file $logcnf: $!\n";
@@ -394,9 +182,9 @@ my $installer   = $optlogdir . "/" . $name . "_install";
 my $uninstaller = $optlogdir . "/" . $name . "_uninstall";
 my $conffile    = $optcnfdir . "/$name.conf";
 
-################################################################################
+##############################################################################
 # Set output level
-################################################################################
+##############################################################################
 # If multiple outputs are specified, the most verbose will be used.
 if ($optquiet) {
     $DBG = 0;
@@ -411,15 +199,15 @@ if ($optdebug) {
 }
 $logger->debug("Debug level set to $DBG");
 
-################################################################################
+##############################################################################
 # Setup temporary directory
-################################################################################
+##############################################################################
 my $tmpdir     = File::Temp->newdir();
 my $tmpdirname = $tmpdir->dirname;
 
-################################################################################
+##############################################################################
 # Determine if SELinux is enabled and enforcing
-################################################################################
+##############################################################################
 $cmd = "selinuxenabled";
 $logger->debug("Determining if SELinux is enabled");
 &runcmd;
@@ -428,51 +216,51 @@ $cmd = "getenforce | grep -i ^enforcing\$ > /dev/null";
 $logger->debug("Determining if SELinux is enforcing");
 &runcmd;
 
-################################################################################
+##############################################################################
 # SELinux port types
-################################################################################
+##############################################################################
 my $torpt     = "tor_port_t";
 my $privoxypt = "http_cache_port_t";
 my $squidpt   = "squid_port_t";
 
-################################################################################
+##############################################################################
 # Configuration file locations
-################################################################################
+##############################################################################
 my $torcfg     = "/etc/tor/torrc";
 my $privoxycfg = "/etc/privoxy/config";
 my $squidcfg   = "/etc/squid/squid.conf";
 
-################################################################################
+##############################################################################
 # Log rotate file locations
-################################################################################
+##############################################################################
 my $torlrfile     = "/etc/logrotate.d/tor";
 my $privoxylrfile = "/etc/logrotate.d/privoxy";
 my $squidlrfile   = "/etc/logrotate.d/squid";
 
-################################################################################
+##############################################################################
 # Data directory locations
-################################################################################
+##############################################################################
 my $tordatadir     = "/var/lib/tor";
 my $privoxydatadir = "";
 my $squiddatadir   = "/var/spool/squid";
 
-################################################################################
+##############################################################################
 # Log directory locations
-################################################################################
+##############################################################################
 my $torlogdir     = "/var/log/tor";
 my $privoxylogdir = "/var/log/privoxy";
 my $squidlogdir   = "/var/log/squid";
 
-################################################################################
+##############################################################################
 # Checking for invalid options
-################################################################################
+##############################################################################
 if ( $optsetup && $optuninst ) {
     $logger->logcroak("Cannot specify setup and uninstall at the same time!");
 }
 
-################################################################################
+##############################################################################
 # Running Setup
-################################################################################
+##############################################################################
 if ($optsetup) {
     $logger->info("Running $name setup...");
 
@@ -487,9 +275,9 @@ if ($optsetup) {
     exit 0;
 }
 
-################################################################################
+##############################################################################
 # Running Uninstaller
-################################################################################
+##############################################################################
 if ($optuninst) {
     $logger->warn("Running $name uninstaller...");
     $logger->info("Using installation file $installer");
@@ -551,9 +339,9 @@ if ($optuninst) {
     exit 0;
 }
 
-################################################################################
+##############################################################################
 # Running Installer
-################################################################################
+##############################################################################
 $logger->info("Running $name installer...");
 if ( -f $installer ) {
     my (
@@ -575,9 +363,9 @@ $logger->info("Using configuration file $conffile");
 &checkconf;
 &writeconf;
 
-################################################################################
+##############################################################################
 # cURL browser setup
-################################################################################
+##############################################################################
 my $browser = WWW::Curl::Easy->new;
 $browser->setopt( CURLOPT_VERBOSE, $curloptverbose );
 my $curlversion = $browser->version(CURLVERSION_NOW);
@@ -640,16 +428,16 @@ while ( $circuit < $conf{circuits} ) {
     $circuit++;
     $logger->info("Installing circuit $circuit...");
 
-################################################################################
+    ##########################################################################
     # Tor Circuit installation
-################################################################################
+    ##########################################################################
     $logger->info(
         "Installing tor circuit $circuit on port $conf{'torport' . $circuit}..."
     );
 
-################################################################################
+    ##########################################################################
     # Tor SELinux port type modifications
-################################################################################
+    ##########################################################################
     $logger->debug(
 "Setting SELinux type to $torpt on tcp protocol port $conf{'torport' . $circuit}..."
     );
@@ -657,9 +445,9 @@ while ( $circuit < $conf{circuits} ) {
 "semanage port -a -t $torpt -p tcp $conf{'torport' . $circuit} ; if [ \$? -ne 0 ]; then semanage port -m -t $torpt -p tcp $conf{'torport' . $circuit}; fi";
     &runcmd;
 
-################################################################################
+    ##########################################################################
     # Tor configuration file generation
-################################################################################
+    ##########################################################################
     $logger->debug(
         "Configuring tor daemon running on port $conf{'torport' . $circuit}..."
     );
@@ -670,12 +458,14 @@ while ( $circuit < $conf{circuits} ) {
     unless ( open( CFG, ">$torc" ) ) {
         $logger->logcroak("Unable to open $torc for writing: $!");
     }
-    print CFG
-"SocksPort $conf{'torport' . $circuit} # Bind to localhost:$conf{'torport' . $circuit} for local connections.\n";
+    print CFG "SocksPort $conf{'torport' . $circuit} ";
+    print CFG "# Bind to localhost:$conf{'torport' . $circuit} ";
+    print CFG "for local connections.\n";
+    print CFG "AllowInvalidNodes middle,rendezvous\n";
     my @loglevels = ( "debug", "info", "notice", "warn", "err" );
     foreach my $loglevel (@loglevels) {
         my $logf =
-            "/var/log/tor/"
+            "$torlogdir"
           . $loglevel . "_"
           . $conf{ 'torport' . $circuit } . ".log";
         print CFG "Log $loglevel file $logf\n";
@@ -722,9 +512,9 @@ while ( $circuit < $conf{circuits} ) {
     $cmd = "restorecon -R -v $torc";
     &runcmd;
 
-################################################################################
+    ##########################################################################
     # Tor systemd system and service management
-################################################################################
+    ##########################################################################
     $logger->debug(
         "Enabling tor daemon running on port $conf{'torport' . $circuit}...");
     $cmd = "systemctl enable tor@" . $conf{ 'torport' . $circuit } . ".service";
@@ -737,9 +527,9 @@ while ( $circuit < $conf{circuits} ) {
     &runcmd;
     print INST "$cmd\n";
 
-################################################################################
+    ##########################################################################
     # Tor simple tests
-################################################################################
+    ##########################################################################
     $logger->info(
         "Testing tor daemon running on port $conf{'torport' . $circuit}...");
 
@@ -749,16 +539,16 @@ while ( $circuit < $conf{circuits} ) {
 "Installation of tor circuit $circuit on port $conf{'torport' . $circuit} is complete."
     );
 
-################################################################################
+    ##########################################################################
     # Privoxy Circuit installation
-################################################################################
+    ##########################################################################
     $logger->info(
 "Installing privoxy circuit $circuit on port $conf{'privoxyport' . $circuit}..."
     );
 
-################################################################################
+    ##########################################################################
     # Privoxy SELinux port type modifications
-################################################################################
+    ##########################################################################
     $logger->debug(
 "Setting SELinux type to $privoxypt on tcp protocol port $conf{'privoxyport' . $circuit}..."
     );
@@ -766,9 +556,9 @@ while ( $circuit < $conf{circuits} ) {
 "semanage port -a -t $privoxypt -p tcp $conf{'privoxyport' . $circuit} ; if [ \$? -ne 0 ]; then semanage port -m -t $privoxypt -p tcp $conf{'privoxyport' . $circuit}; fi";
     &runcmd;
 
-################################################################################
+    ##########################################################################
     # Privoxy configuration file generation
-################################################################################
+    ##########################################################################
     $logger->debug(
 "Configuring privoxy daemon running on port $conf{'privoxyport' . $circuit}..."
     );
@@ -782,20 +572,22 @@ while ( $circuit < $conf{circuits} ) {
 
     print CFG "confdir /etc/privoxy\n";
     print CFG "logdir $privoxylogdir\n";
-    print CFG
-"actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on.\n";
+    print CFG "actionsfile match-all.action ";
+    print CFG "# Actions that are applied to ";
+    print CFG "all sites and maybe overruled later on.\n";
     print CFG "actionsfile default.action   # Main actions file\n";
     print CFG "actionsfile user.action      # User customizations\n";
     print CFG "filterfile default.filter\n";
     print CFG "filterfile user.filter      # User customizations\n";
     print CFG "logfile logfile_" . $conf{ 'privoxyport' . $circuit } . ".log\n";
-    print CFG
-"debug     1 # Log the destination for each request Privoxy let through. See also debug 1024.\n";
-    print CFG
-"debug  1024 # Actions that are applied to all sites and maybe overruled later on.\n";
+    print CFG "debug     1 ";
+    print CFG "# Log the destination for each request ";
+    print CFG "Privoxy let through. See also debug 1024.\n";
+    print CFG "debug  1024 # Actions that are applied ";
+    print CFG "to all sites and maybe overruled later on.\n";
     print CFG "debug  4096 # Startup banner and warnings\n";
     print CFG "debug  8192 # Non-fatal errors\n";
-    print CFG "listen-address  127.0.0.1:$conf{'privoxyport' . $circuit}\n";
+    print CFG "listen-address  $curloptproxy:$conf{'privoxyport' . $circuit}\n";
     print CFG "toggle  1\n";
     print CFG "enable-remote-toggle  0\n";
     print CFG "enable-remote-http-toggle  0\n";
@@ -806,18 +598,20 @@ while ( $circuit < $conf{circuits} ) {
 
     my @pps = ( "/", ":443" );
     foreach my $pp (@pps) {
-        print CFG
-          "forward-socks5t     $pp  127.0.0.1:$conf{'torport' . $circuit}  .\n";
-        print CFG "forward  192.168.*.*$pp  .      # Private-Use  [RFC1918]\n";
+        print CFG "forward-socks5t     $pp  ";
+        print CFG "$curloptproxy:$conf{'torport' . $circuit}  .\n";
+        print CFG "forward  192.168.*.*$pp  .      ";
+        print CFG "# Private-Use  [RFC1918]\n";
         my $privsub = 16;
         while ( $privsub < 32 ) {
-            print CFG
-"forward   172.$privsub.*.*$pp  .      # Private-Use  [RFC1918]\n";
+            print CFG "forward   172.$privsub.*.*$pp  .      ";
+            print CFG "# Private-Use  [RFC1918]\n";
             $privsub++;
         }
-        print CFG "forward     10.*.*.*$pp  .      # Private-Use  [RFC1918]\n";
-        print CFG
-"forward    127.*.*.*$pp  .      # Loopback     [RFC1122], section 3.2.1.3\n";
+        print CFG "forward     10.*.*.*$pp  .      ";
+        print CFG "# Private-Use  [RFC1918]\n";
+        print CFG "forward    127.*.*.*$pp  .      ";
+        print CFG "# Loopback     [RFC1122], section 3.2.1.3\n";
         print CFG "forward    localhost$pp  .\n";
     }
 
@@ -844,9 +638,9 @@ while ( $circuit < $conf{circuits} ) {
     $cmd = "restorecon -R -v $privoxyc";
     &runcmd;
 
-################################################################################
+    ##########################################################################
     # Privoxy systemd system and service management
-################################################################################
+    ##########################################################################
     $logger->debug(
 "Enabling privoxy daemon running on port $conf{'privoxyport' . $circuit}..."
     );
@@ -867,9 +661,9 @@ while ( $circuit < $conf{circuits} ) {
     &runcmd;
     print INST "$cmd\n";
 
-################################################################################
+    ##########################################################################
     # Privoxy simple tests
-################################################################################
+    ##########################################################################
     $logger->info(
 "Testing privoxy daemon running on port $conf{'privoxyport' . $circuit}..."
     );
@@ -930,14 +724,14 @@ while ( $circuit < $conf{circuits} ) {
     );
 }
 
-################################################################################
+##############################################################################
 # Squid installation
-################################################################################
+##############################################################################
 $logger->info("Installing squid on port $conf{'squidport'}...");
 
-################################################################################
+##############################################################################
 # Squid SELinux port type modifications
-################################################################################
+##############################################################################
 $logger->debug(
 "Setting SELinux type to $squidpt on tcp protocol port $conf{'squidport'}..."
 );
@@ -945,9 +739,9 @@ $cmd =
 "semanage port -a -t $squidpt -p tcp $conf{'squidport'} ; if [ \$? -ne 0 ]; then semanage port -m -t $squidpt -p tcp $conf{'squidport'}; fi";
 &runcmd;
 
-################################################################################
+##############################################################################
 # Squid configuration file generation
-################################################################################
+##############################################################################
 $logger->debug(
     "Configuring squid daemon running on port $conf{'squidport'}...");
 my $squidc = $squidcfg . "_" . $conf{'squidport'};
@@ -958,11 +752,12 @@ unless ( open( CFG, ">$squidc" ) ) {
     $logger->logcroak("Unable to open $squidc for writing: $!");
 }
 
-print CFG "acl localnet src 10.0.0.0/8\t# RFC1918 possible internal network\n";
-print CFG
-  "acl localnet src 172.16.0.0/12\t# RFC1918 possible internal network\n";
-print CFG
-  "acl localnet src 192.168.0.0/16\t# RFC1918 possible internal network\n";
+print CFG "acl localnet src 10.0.0.0/8\t";
+print CFG "# RFC1918 possible internal network\n";
+print CFG "acl localnet src 172.16.0.0/12\t";
+print CFG "# RFC1918 possible internal network\n";
+print CFG "acl localnet src 192.168.0.0/16\t";
+print CFG "# RFC1918 possible internal network\n";
 print CFG "acl SSL_ports port 443\n";
 print CFG "acl Safe_ports port 80\t\t# http\n";
 print CFG "acl Safe_ports port 21\t\t# ftp\n";
@@ -992,8 +787,10 @@ $circuit = 0;
 
 while ( $circuit < $conf{circuits} ) {
     $circuit++;
-    print CFG
-"cache_peer 127.0.0.1 parent $conf{'privoxyport' . $circuit} 0 no-query round-robin no-digest name=localhost-$conf{'privoxyport' . $circuit}\n";
+    print CFG "cache_peer $curloptproxy parent ";
+    print CFG "$conf{'privoxyport' . $circuit} 0 ";
+    print CFG "no-query round-robin no-digest ";
+    print CFG "name=localhost-$conf{'privoxyport' . $circuit}\n";
 }
 print CFG "hierarchy_stoplist cgi-bin \?\n";
 my $squiddd = $squiddatadir . "_" . $conf{'squidport'};
@@ -1016,16 +813,16 @@ if ( !-d $squiddd ) {
     &runcmd;
 }
 print CFG "cache_dir ufs $squiddd 100 16 256\n";
-print CFG "access_log daemon:/var/log/squid/access_"
+print CFG "access_log daemon:$squidlogdir/access_"
   . $conf{'squidport'}
   . ".log squid\n";
-print CFG "cache_store_log daemon:/var/log/squid/store_"
+print CFG "cache_store_log daemon:$squidlogdir/store_"
   . $conf{'squidport'}
   . ".log squid\n";
 print CFG "log_mime_hdrs on\n";
 print CFG "pid_filename /var/run/squid_" . $conf{'squidport'} . ".pid\n";
-print CFG "cache_log /var/log/squid/cache_" . $conf{'squidport'} . ".log\n";
-print CFG "coredump_dir $squiddatadir\n";
+print CFG "cache_log $squidlogdir/cache_" . $conf{'squidport'} . ".log\n";
+print CFG "coredump_dir $squiddd\n";
 print CFG "refresh_pattern ^ftp:\t\t1440\t20%\t10080\n";
 print CFG "refresh_pattern ^gopher:\t1440\t0%\t1440\n";
 print CFG "refresh_pattern -i (/cgi-bin/|\\?) 0\t0%\t0\n";
@@ -1059,9 +856,9 @@ $cmd =
 $cmd = "restorecon -R -v $squidc";
 &runcmd;
 
-################################################################################
+##############################################################################
 # Squid systemd system and service management
-################################################################################
+##############################################################################
 $logger->debug("Enabling squid daemon running on port $conf{'squidport'}...");
 $cmd = "systemctl enable squid@" . $conf{'squidport'} . ".service";
 &runcmd;
@@ -1072,14 +869,14 @@ $cmd = "systemctl start squid@" . $conf{'squidport'} . ".service";
 &runcmd;
 print INST "$cmd\n";
 
-################################################################################
+##############################################################################
 # Squid simple tests
-################################################################################
+##############################################################################
 $logger->info("Testing squid daemon running on port $conf{'squidport'}...");
 
 $browser->setopt( CURLOPT_PROXY, "" );
 my $squidtesturi =
-  "http://127.0.0.1:" . $conf{'squidport'} . "/squid-internal-mgr/info";
+  "http://$curloptproxy:" . $conf{'squidport'} . "/squid-internal-mgr/info";
 $browser->setopt( CURLOPT_URL, $squidtesturi );
 my $squidinternalmgrhtml;
 $browser->setopt( CURLOPT_WRITEDATA, \$squidinternalmgrhtml );
@@ -1127,9 +924,9 @@ else {
 
 $logger->info("Installation of squid on port $conf{'squidport'} is complete.");
 
-################################################################################
+##############################################################################
 # %{NAMEMIXED} systemd system and service management
-################################################################################
+##############################################################################
 $logger->debug("Enabling %{NAME} target...");
 $cmd = "systemctl enable %{NAME}.target";
 &runcmd;
@@ -1211,9 +1008,9 @@ close(INST);
 $logger->info("Done.");
 exit 0;
 
-################################################################################
+##############################################################################
 # Load all command-line arguments into hash
-################################################################################
+##############################################################################
 sub loadargs {
     $logger->debug("Loading all command-line arguments into hash");
     foreach my $confkey ( keys %confargs ) {
@@ -1223,9 +1020,9 @@ sub loadargs {
     }
 }
 
-################################################################################
+##############################################################################
 # Read all configuration file variables and values into hash
-################################################################################
+##############################################################################
 sub readconf {
     $logger->debug(
         "Reading all configuration file variables and values into hash");
@@ -1242,9 +1039,9 @@ sub readconf {
     }
 }
 
-################################################################################
+##############################################################################
 # Write all configuration variables and values into configuration file
-################################################################################
+##############################################################################
 sub writeconf {
     $logger->debug(
         "Writing all configuration variables and values into configuration file"
@@ -1258,9 +1055,9 @@ sub writeconf {
     close(CONF);
 }
 
-################################################################################
+##############################################################################
 # Check all configuration variables for validity
-################################################################################
+##############################################################################
 sub checkconf {
     $logger->debug(
         "Checking all configuration variables and values for validity");
@@ -1442,9 +1239,9 @@ sub testtor {
     }
 }
 
-################################################################################
+##############################################################################
 # Run system calls/commands
-################################################################################
+##############################################################################
 sub runcmd {
     $logger->debug("Running: $cmd");
     my $pid = open3( $wtr, $rdr, $err, $cmd );
