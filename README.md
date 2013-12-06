@@ -7,8 +7,16 @@ underexpose — Anonymous, private, and caching web proxy installer.
 Synopsis
 --------
 
+*underexpose* { *--setup* | *-S* } [ *-q* | *--quiet* ]
+[ *-v* | *--verbose* ] [ *-d* | *--debug* ] [ *-c*
+*circuits* | *--circuits* = *circuits* ]
+
 *underexpose* [ *-q* | *--quiet* ] [ *-v* | *--verbose* ]
 [ *-d* | *--debug* ]
+
+*underexpose* { *--uninstall* | *-U* } [ *-q* | *--quiet* ]
+[ *-v* | *--verbose* ] [ *-d* | *--debug* ] [ *-c*
+*circuits* | *--circuits* = *circuits* ]
 
 *underexpose* { *--version* | *-V* }
 
@@ -31,17 +39,38 @@ Command line options are used to specify various startup options for
 underexpose:
 
 
+ *-c* *circuits*, *--circuits* = *circuits* 
+:   Number of circuits (Tor-Privoxy pairs) that should be installed.
+
+ *-C* *configdir*, *--configdir* = *configdir* 
+:   Configuration directory.
+
  *-d*, *--debug* 
 :   Debug output.
+
+ *-D* *docdir*, *--docdir* = *docdir* 
+:   Documentation directory.
 
  *-h*, *--help* 
 :   Print or show help information and exit.
 
+ *-L* *logdir*, *--logdir* = *logdir* 
+:   Log directory.
+
  *-m*, *--man* 
 :   Print the entire manual page and exit.
 
+ *-M* *mandir*, *--mandir* = *mandir* 
+:   Reference manuals directory.
+
  *-q*, *--quiet* 
 :   Quiet output.
+
+ *-S*, *--setup* 
+:   Run setup only (no installation).
+
+ *-U*, *--uninstall* 
+:   Run uninstallation.
 
  *-v*, *--verbose* 
 :   Verbose output.
@@ -77,8 +106,53 @@ Brandon Perkins \<[bperkins@redhat.com](mailto:bperkins@redhat.com)\>
 RESOURCES
 ---------
 
-GitHub:
-[https://github.com/bdperkin/underexpose](https://github.com/bdperkin/underexpose)
+~~~~ {.literallayout}
+GitHub: <https://github.com/bdperkin/underexpose>
+~~~~
+
+~~~~ {.literallayout}
+Tor, Second-generation onion router: <https://www.torproject.org/>
+~~~~
+
+~~~~ {.literallayout}
+Tor test site: <https://check.torproject.org/>
+~~~~
+
+~~~~ {.literallayout}
+Privoxy Home page: <http://www.privoxy.org/>
+~~~~
+
+~~~~ {.literallayout}
+Privoxy FAQ: <http://www.privoxy.org/faq/>
+~~~~
+
+~~~~ {.literallayout}
+Privoxy developer manual: <http://www.privoxy.org/developer-manual/>
+~~~~
+
+~~~~ {.literallayout}
+Privoxy Project Page: <https://sourceforge.net/projects/ijbswa/>
+~~~~
+
+~~~~ {.literallayout}
+Privoxy web-based user interface: <http://config.privoxy.org/>
+~~~~
+
+~~~~ {.literallayout}
+Privoxy web-based user interface shortcut: <http://p.p/>
+~~~~
+
+~~~~ {.literallayout}
+Squid wiki and examples: <http://wiki.squid-cache.org/>
+~~~~
+
+~~~~ {.literallayout}
+Squid FAQ wiki: <http://wiki.squid-cache.org/SquidFaq>
+~~~~
+
+~~~~ {.literallayout}
+Squid Configuration Manual: <http://www.squid-cache.org/Doc/config/>
+~~~~
 
 COPYING
 -------
