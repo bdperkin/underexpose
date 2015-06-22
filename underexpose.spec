@@ -1,5 +1,5 @@
 Name:		underexpose
-Version:	0.0.3
+Version:	0.0.4
 Release:	1%{?dist}
 Summary:	Anonymous, private, and caching web proxy installer.
 
@@ -103,6 +103,9 @@ cat README.md.pandoc | %{__grep} -v ^% | %{__sed} -e 's/\*\*/\*/g' | %{__sed} -e
 %config %{_sysconfdir}/sysconfig/tor
 
 %changelog
+* Mon Jun 22 2015 Brandon Perkins <bperkins@redhat.com> 0.0.4-1
+- fix conflict with native tor service file (bperkins@redhat.com)
+
 * Fri Dec 06 2013 Brandon Perkins <bperkins@redhat.com> 0.0.3-1
 - cURL options
 - Parse command line options
